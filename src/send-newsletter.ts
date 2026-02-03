@@ -1,0 +1,363 @@
+import { Client } from '@notionhq/client';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Load .env from project root manually
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const envPath = join(__dirname, '..', '.env');
+
+const envContent = readFileSync(envPath, 'utf-8');
+for (const line of envContent.split('\n')) {
+  const trimmed = line.trim();
+  if (trimmed && !trimmed.startsWith('#')) {
+    const [key, ...valueParts] = trimmed.split('=');
+    if (key && valueParts.length > 0) {
+      process.env[key] = valueParts.join('=');
+    }
+  }
+}
+
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
+
+const NEWSLETTER_DB_ID = process.env.NOTION_NEWSLETTER_DB_ID!;
+const LOOPS_API_KEY = process.env.LOOPS_API_KEY!;
+const LOOPS_TRANSACTIONAL_ID = process.env.LOOPS_TRANSACTIONAL_ID!;
+
+interface NewsletterToSend {
+  id: string;
+  url: string;
+  title: string;
+  issueDate: string;
+  highlights: string;
+  primaryCustomer: string;
+  content: string;
+}
+
+interface LoopsContact {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+/**
+ * Find newsletters with Status = "Ready to Send"
+ */
+async function getReadyNewsletters(): Promise<NewsletterToSend[]> {
+  const response = await notion.databases.query({
+    database_id: NEWSLETTER_DB_ID,
+    filter: {
+      property: 'Status',
+      status: { equals: 'Ready' },
+    },
+  });
+
+  const newsletters: NewsletterToSend[] = [];
+
+  for (const page of response.results) {
+    const p = page as any;
+
+    // Get page content
+    const content = await getPageContent(p.id);
+
+    newsletters.push({
+      id: p.id,
+      url: p.url,
+      title: p.properties.Issue?.title?.[0]?.plain_text || 'Newsletter',
+      issueDate: p.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0],
+      highlights: p.properties.Highlights?.rich_text?.[0]?.plain_text || '',
+      primaryCustomer: p.properties['Primary customer']?.rich_text?.[0]?.plain_text || '',
+      content,
+    });
+  }
+
+  return newsletters;
+}
+
+/**
+ * Get the content of a newsletter page as HTML
+ */
+async function getPageContent(pageId: string): Promise<string> {
+  const blocks = await notion.blocks.children.list({
+    block_id: pageId,
+    page_size: 100,
+  });
+
+  let html = '';
+
+  for (const block of blocks.results) {
+    const b = block as any;
+    const type = b.type;
+
+    switch (type) {
+      case 'heading_1':
+        html += `<h1>${getRichText(b.heading_1?.rich_text)}</h1>\n`;
+        break;
+      case 'heading_2':
+        html += `<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
+        break;
+      case 'heading_3':
+        html += `<h3>${getRichText(b.heading_3?.rich_text)}</h3>\n`;
+        break;
+      case 'paragraph':
+        const text = getRichText(b.paragraph?.rich_text);
+        if (text) html += `<p>${text}</p>\n`;
+        break;
+      case 'bulleted_list_item':
+        html += `<li>${getRichText(b.bulleted_list_item?.rich_text)}</li>\n`;
+        break;
+      case 'numbered_list_item':
+        html += `<li>${getRichText(b.numbered_list_item?.rich_text)}</li>\n`;
+        break;
+      case 'quote':
+        html += `<blockquote>${getRichText(b.quote?.rich_text)}</blockquote>\n`;
+        break;
+      case 'divider':
+        html += '<hr>\n';
+        break;
+      case 'callout':
+        html += `<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin:16px 0;">${getRichText(b.callout?.rich_text)}</div>\n`;
+        break;
+    }
+  }
+
+  return html;
+}
+
+/**
+ * Extract plain text from Notion rich text array
+ */
+function getRichText(richText: any[]): string {
+  if (!richText) return '';
+  return richText.map((t: any) => {
+    let text = t.plain_text || '';
+    if (t.annotations?.bold) text = `<strong>${text}</strong>`;
+    if (t.annotations?.italic) text = `<em>${text}</em>`;
+    if (t.annotations?.code) text = `<code>${text}</code>`;
+    if (t.href) text = `<a href="${t.href}">${text}</a>`;
+    return text;
+  }).join('');
+}
+
+/**
+ * Get email recipients from Loops API
+ * Note: This uses Loops contacts. You may need to adjust based on your Loops setup.
+ */
+async function getEmailRecipients(): Promise<LoopsContact[]> {
+  // For now, return an empty array - you'll need to configure this based on your Loops setup
+  // Option 1: Query Loops API for contacts with a specific tag/list
+  // Option 2: Maintain a list in Notion
+  // Option 3: Hard-code a test list
+
+  console.log('   ℹ️  Email recipients should be configured in Loops');
+  return [];
+}
+
+/**
+ * Send newsletter via Loops transactional email
+ */
+async function sendViaLoops(
+  newsletter: NewsletterToSend,
+  recipients: LoopsContact[]
+): Promise<{ sent: number; failed: number }> {
+  if (!LOOPS_API_KEY || LOOPS_API_KEY === 'your-loops-api-key') {
+    console.log('   ⚠️  Loops API key not configured. Skipping email send.');
+    return { sent: 0, failed: 0 };
+  }
+
+  if (!LOOPS_TRANSACTIONAL_ID || LOOPS_TRANSACTIONAL_ID === 'your-transactional-email-id') {
+    console.log('   ⚠️  Loops transactional ID not configured. Skipping email send.');
+    return { sent: 0, failed: 0 };
+  }
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const recipient of recipients) {
+    try {
+      const response = await fetch('https://app.loops.so/api/v1/transactional', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOOPS_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transactionalId: LOOPS_TRANSACTIONAL_ID,
+          email: recipient.email,
+          dataVariables: {
+            issue_title: newsletter.title,
+            issue_date: newsletter.issueDate,
+            highlights: newsletter.highlights,
+            content_html: newsletter.content,
+            first_name: recipient.firstName || 'there',
+          },
+        }),
+      });
+
+      if (response.ok) {
+        sent++;
+      } else {
+        console.log(`   ❌ Failed to send to ${recipient.email}: ${response.statusText}`);
+        failed++;
+      }
+    } catch (error) {
+      console.log(`   ❌ Error sending to ${recipient.email}: ${error}`);
+      failed++;
+    }
+
+    // Rate limiting
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  return { sent, failed };
+}
+
+/**
+ * Update newsletter status to "Sent" in Notion
+ */
+async function markAsSent(pageId: string): Promise<void> {
+  await notion.pages.update({
+    page_id: pageId,
+    properties: {
+      Status: {
+        status: { name: 'Sent' },
+      },
+    },
+  });
+}
+
+/**
+ * Main function to send ready newsletters
+ */
+async function sendNewsletters() {
+  console.log('📧 Newsletter Send Agent\n');
+  console.log('='.repeat(50));
+
+  // Step 1: Find newsletters ready to send
+  console.log('\n📋 Step 1: Finding newsletters with Status = "Ready"...');
+  const newsletters = await getReadyNewsletters();
+
+  if (newsletters.length === 0) {
+    console.log('   No newsletters ready to send.');
+    console.log('   Set Status to "Ready" in Notion to trigger email send.');
+    return;
+  }
+
+  console.log(`   Found ${newsletters.length} newsletter(s) ready to send:`);
+  for (const n of newsletters) {
+    console.log(`   - ${n.title}`);
+  }
+
+  // Step 2: Get recipients
+  console.log('\n📬 Step 2: Getting email recipients...');
+  const recipients = await getEmailRecipients();
+
+  if (recipients.length === 0) {
+    console.log('   No recipients configured. Skipping email send.');
+    console.log('   Configure recipients in Loops or update getEmailRecipients().');
+
+    // Still mark as sent for demo purposes
+    for (const newsletter of newsletters) {
+      console.log(`\n📝 Marking "${newsletter.title}" as Sent (no emails sent)...`);
+      await markAsSent(newsletter.id);
+    }
+    return;
+  }
+
+  console.log(`   Found ${recipients.length} recipient(s)`);
+
+  // Step 3: Send each newsletter
+  for (const newsletter of newsletters) {
+    console.log(`\n📤 Step 3: Sending "${newsletter.title}"...`);
+    const result = await sendViaLoops(newsletter, recipients);
+
+    console.log(`   Sent: ${result.sent}, Failed: ${result.failed}`);
+
+    // Step 4: Update status to Sent
+    if (result.sent > 0 || recipients.length === 0) {
+      console.log('\n✅ Step 4: Updating status to "Sent"...');
+      await markAsSent(newsletter.id);
+      console.log(`   Updated: ${newsletter.url}`);
+    }
+  }
+
+  console.log('\n' + '='.repeat(50));
+  console.log('✅ Newsletter send complete!');
+}
+
+/**
+ * Send a single newsletter by page ID
+ * Used by the webhook endpoint for auto-send on status change
+ */
+async function sendSingleNewsletter(pageId: string): Promise<{
+  success: boolean;
+  sent: number;
+  failed: number;
+  error?: string;
+}> {
+  console.log('📧 Sending single newsletter\n');
+  console.log('='.repeat(50));
+  console.log(`Page ID: ${pageId}`);
+
+  try {
+    // Get the newsletter page
+    const page = await notion.pages.retrieve({ page_id: pageId }) as any;
+    const status = page.properties.Status?.status?.name;
+
+    // Verify status is Ready (not already Sent)
+    if (status === 'Sent') {
+      console.log('   ℹ️  Newsletter already sent, skipping');
+      return { success: true, sent: 0, failed: 0 };
+    }
+
+    if (status !== 'Ready') {
+      console.log(`   ⚠️  Status is "${status}", not "Ready". Skipping.`);
+      return { success: false, sent: 0, failed: 0, error: `Status is "${status}", expected "Ready"` };
+    }
+
+    // Get content
+    const content = await getPageContent(pageId);
+
+    const newsletter: NewsletterToSend = {
+      id: pageId,
+      url: page.url,
+      title: page.properties.Issue?.title?.[0]?.plain_text || 'Newsletter',
+      issueDate: page.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0],
+      highlights: page.properties.Highlights?.rich_text?.[0]?.plain_text || '',
+      primaryCustomer: page.properties['Primary customer']?.rich_text?.[0]?.plain_text || '',
+      content,
+    };
+
+    console.log(`\n📰 Sending: ${newsletter.title}`);
+
+    // Get recipients
+    const recipients = await getEmailRecipients();
+    console.log(`   Recipients: ${recipients.length}`);
+
+    if (recipients.length === 0) {
+      console.log('   ⚠️  No recipients. Marking as sent.');
+      await markAsSent(pageId);
+      return { success: true, sent: 0, failed: 0 };
+    }
+
+    // Send
+    const result = await sendViaLoops(newsletter, recipients);
+    console.log(`   Sent: ${result.sent}, Failed: ${result.failed}`);
+
+    // Mark as sent
+    await markAsSent(pageId);
+    console.log('   ✅ Marked as Sent');
+
+    return { success: true, sent: result.sent, failed: result.failed };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`   ❌ Error: ${errorMessage}`);
+    return { success: false, sent: 0, failed: 0, error: errorMessage };
+  }
+}
+
+// Run if called directly
+sendNewsletters().catch(console.error);
+
+export { sendNewsletters, sendSingleNewsletter };

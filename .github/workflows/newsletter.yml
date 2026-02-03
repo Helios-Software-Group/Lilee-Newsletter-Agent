@@ -1,0 +1,81 @@
+name: Weekly Newsletter
+
+on:
+  # Run every Tuesday at 9:00 AM EST (14:00 UTC)
+  schedule:
+    - cron: '0 14 * * 2'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Command to run'
+        required: true
+        default: 'weekly'
+        type: choice
+        options:
+          - weekly
+          - categorize
+          - draft
+          - send
+
+jobs:
+  newsletter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Newsletter Agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_MEETINGS_DB_ID: ${{ secrets.NOTION_MEETINGS_DB_ID }}
+          NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
+          NOTION_NEWSLETTER_DB_ID: ${{ secrets.NOTION_NEWSLETTER_DB_ID }}
+          NOTION_NEWSLETTER_COLLECTION_ID: ${{ secrets.NOTION_NEWSLETTER_COLLECTION_ID }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          LOOPS_API_KEY: ${{ secrets.LOOPS_API_KEY }}
+          LOOPS_TRANSACTIONAL_ID: ${{ secrets.LOOPS_TRANSACTIONAL_ID }}
+          # Safe: command is from constrained choice input, not free-form text
+          NEWSLETTER_COMMAND: ${{ github.event.inputs.command || 'weekly' }}
+        run: |
+          echo "Running command: $NEWSLETTER_COMMAND"
+          npx tsx src/index.ts "$NEWSLETTER_COMMAND"
+
+  # Separate job for sending approved newsletters
+  # This can be triggered manually when newsletters are approved
+  send-approved:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.command == 'send'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Send Approved Newsletters
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_NEWSLETTER_DB_ID: ${{ secrets.NOTION_NEWSLETTER_DB_ID }}
+          LOOPS_API_KEY: ${{ secrets.LOOPS_API_KEY }}
+          LOOPS_TRANSACTIONAL_ID: ${{ secrets.LOOPS_TRANSACTIONAL_ID }}
+        run: npx tsx src/send-newsletter.ts
