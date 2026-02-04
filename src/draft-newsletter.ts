@@ -253,7 +253,7 @@ async function generateNewsletterDraft(
   const today = new Date().toISOString().split('T')[0];
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-opus-4-5-20251101',
     max_tokens: 4000,
     messages: [{
       role: 'user',
