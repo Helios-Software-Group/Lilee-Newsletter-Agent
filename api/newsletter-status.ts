@@ -364,9 +364,15 @@ async function sendViaLoops(
           transactionalId: LOOPS_TRANSACTIONAL_ID,
           email: recipient.email,
           dataVariables: {
+            // Required camelCase variables for Loops template
+            issueTitle: newsletter.title,
+            issueDate: newsletter.issueDate,
+            highlights: newsletter.highlights,
+            contentHtml: newsletter.contentHtml,
+            collateralHtml: newsletter.collateralHtml,
+            // Also include snake_case for MJML template compatibility
             issue_title: newsletter.title,
             issue_date: newsletter.issueDate,
-            highlights: newsletter.highlights,
             content_html: newsletter.contentHtml,
             collateral_html: newsletter.collateralHtml,
             first_name: recipient.firstName || 'there',
