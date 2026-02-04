@@ -36,9 +36,75 @@ interface LoopsContact {
 }
 
 /**
+ * Extract page ID from various Notion webhook formats
+ */
+function extractPageId(body: any): string | null {
+  console.log('🔍 Attempting to extract pageId from body keys:', Object.keys(body || {}));
+
+  // Direct pageId field (our custom format)
+  if (body?.pageId) {
+    console.log('   Found pageId in body.pageId');
+    return body.pageId;
+  }
+
+  // Notion automation format - data.id
+  if (body?.data?.id) {
+    console.log('   Found pageId in body.data.id');
+    return body.data.id;
+  }
+
+  // Notion automation format - id at root (most common for automation webhooks)
+  if (body?.id) {
+    console.log('   Found pageId in body.id');
+    return body.id;
+  }
+
+  // Notion automation format with page object
+  if (body?.page?.id) {
+    console.log('   Found pageId in body.page.id');
+    return body.page.id;
+  }
+
+  // Check for pageID variable (case variation)
+  if (body?.pageID) {
+    console.log('   Found pageId in body.pageID');
+    return body.pageID;
+  }
+
+  // Check if body itself has object_type of "page" (Notion native format)
+  if (body?.object === 'page') {
+    console.log('   Body is a Notion page object, using root id');
+    return body.id;
+  }
+
+  console.log('   ❌ Could not find pageId in any expected location');
+  return null;
+}
+
+/**
+ * Extract status from various Notion webhook formats
+ */
+function extractStatus(body: any): string | null {
+  // Direct status field
+  if (body?.status) return body.status;
+
+  // Notion properties format
+  if (body?.data?.properties?.Status?.status?.name) {
+    return body.data.properties.Status.status.name;
+  }
+
+  // Nested in properties
+  if (body?.properties?.Status?.status?.name) {
+    return body.properties.Status.status.name;
+  }
+
+  return null;
+}
+
+/**
  * Validate the incoming webhook request
  */
-function validateRequest(req: VercelRequest): { valid: boolean; error?: string } {
+function validateRequest(req: VercelRequest): { valid: boolean; error?: string; pageId?: string; status?: string } {
   if (req.method !== 'POST') {
     return { valid: false, error: 'Method not allowed. Use POST.' };
   }
@@ -51,17 +117,18 @@ function validateRequest(req: VercelRequest): { valid: boolean; error?: string }
     }
   }
 
-  const { pageId, status } = req.body || {};
+  // Log the raw body for debugging
+  console.log('📥 Raw webhook body:', JSON.stringify(req.body, null, 2));
+
+  const pageId = extractPageId(req.body);
+  const status = extractStatus(req.body);
 
   if (!pageId) {
-    return { valid: false, error: 'Missing required field: pageId' };
+    return { valid: false, error: `Missing pageId. Received body: ${JSON.stringify(req.body)}` };
   }
 
-  if (!status) {
-    return { valid: false, error: 'Missing required field: status' };
-  }
-
-  return { valid: true };
+  // Status is optional - we can fetch it from Notion if not provided
+  return { valid: true, pageId, status: status || 'Ready' };
 }
 
 /**
@@ -297,7 +364,9 @@ export default async function handler(
     });
   }
 
-  const { pageId, status } = req.body as NewsletterStatusPayload;
+  // Use extracted values from validation
+  const pageId = validation.pageId!;
+  const status = validation.status!;
 
   console.log('📋 Status change received:', { pageId, status });
 
