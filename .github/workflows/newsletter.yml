@@ -1,9 +1,9 @@
 name: Weekly Newsletter
 
 on:
-  # Run at 19:58 UTC for testing (temporary)
-  schedule:
-    - cron: '58 19 * * *'
+  # Schedule disabled - use manual trigger only
+  # schedule:
+  #   - cron: '45 19 * * 3'  # Wednesday 2:45 PM EST
 
   # Allow manual trigger
   workflow_dispatch:

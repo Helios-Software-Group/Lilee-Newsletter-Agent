@@ -37,10 +37,10 @@
     <mj-section background-color="#ffffff" padding="35px 30px 15px 30px">
       <mj-column>
         <mj-text font-size="28px" font-weight="bold" color="#503666" line-height="1.2">
-          {{issue_title}}
+          {DATA_VARIABLE:issueTitle}
         </mj-text>
         <mj-text font-size="14px" color="#888888" padding-top="10px">
-          {{issue_date}}
+          {DATA_VARIABLE:issueDate}
         </mj-text>
       </mj-column>
     </mj-section>
@@ -50,7 +50,7 @@
       <mj-column>
         <mj-text background-color="#f8f5fa" padding="20px" border-radius="8px" border-left="4px solid #503666">
           <strong style="color: #503666; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">This Week</strong><br/><br/>
-          {{highlights}}
+          {DATA_VARIABLE:highlights}
         </mj-text>
       </mj-column>
     </mj-section>
@@ -66,7 +66,7 @@
     <mj-section background-color="#ffffff" padding="20px 30px 40px 30px">
       <mj-column>
         <mj-text>
-          {{content_html}}
+          {DATA_VARIABLE:contentHtml}
         </mj-text>
       </mj-column>
     </mj-section>
