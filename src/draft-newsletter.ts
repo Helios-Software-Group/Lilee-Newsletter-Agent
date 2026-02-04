@@ -294,6 +294,19 @@ ${meetingsContext}
 7. Include Customer Feedback section with quotes from meetings
 8. End with a specific "One Ask"
 
+**Formatting Guidelines (IMPORTANT):**
+- Use ## for main section headers (e.g., "## What Shipped This Week", "## Roadmap")
+- Use ### with emoji for feature headers (e.g., "### 🚀 Lilee Chat: Interactive Clinical Review Platform")
+- Use ### ending with colon for subsection labels - these will render as uppercase labels in email:
+  - "### What's Live:"
+  - "### Why This Matters for Your Operation:"
+  - "### Operational Impact:"
+  - "### Compliance Angle:"
+- Use bullet points (-) for lists
+- Use **bold** for metric lead-ins (e.g., "**Reduced Review TAT**: 40% faster...")
+- Add --- divider between major feature sections for visual separation
+- Use > for customer quotes in blockquotes
+
 **Response Format (JSON):**
 {
   "title": "Lilee Product Update — ${today}",
@@ -537,8 +550,17 @@ function convertMarkdownToBlocks(markdown: string): any[] {
   for (const line of lines) {
     if (!line.trim()) continue;
 
-    // Headers
-    if (line.startsWith('### ')) {
+    // Headers (check longer prefixes first)
+    if (line.startsWith('#### ')) {
+      // h4 in markdown -> h3 in Notion (will render as h4 in email via colon detection)
+      blocks.push({
+        object: 'block',
+        type: 'heading_3',
+        heading_3: {
+          rich_text: [{ type: 'text', text: { content: line.slice(5) } }],
+        },
+      });
+    } else if (line.startsWith('### ')) {
       blocks.push({
         object: 'block',
         type: 'heading_3',

@@ -161,6 +161,20 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   console.log(`   ✅ Fetched ${blocks.results.length} blocks`);
 
   let html = '';
+  let inBulletedList = false;
+  let inNumberedList = false;
+
+  // Helper to close any open list
+  const closeOpenLists = () => {
+    if (inBulletedList) {
+      html += '</ul>\n';
+      inBulletedList = false;
+    }
+    if (inNumberedList) {
+      html += '</ol>\n';
+      inNumberedList = false;
+    }
+  };
 
   for (const block of blocks.results) {
     const b = block as any;
@@ -168,10 +182,16 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
 
     // Skip collateral checklist and review questions sections
     if (type === 'heading_2') {
-      const text = b.heading_2?.rich_text?.[0]?.plain_text || '';
-      if (text === 'Collateral Checklist' || text === 'Review Questions') {
+      const headingText = b.heading_2?.rich_text?.[0]?.plain_text || '';
+      if (headingText === 'Collateral Checklist' || headingText === 'Review Questions') {
+        closeOpenLists();
         break; // Stop processing after these sections
       }
+    }
+
+    // Close lists if we hit a non-list item
+    if (type !== 'bulleted_list_item' && type !== 'numbered_list_item') {
+      closeOpenLists();
     }
 
     switch (type) {
@@ -179,20 +199,49 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
         html += `<h1>${getRichText(b.heading_1?.rich_text)}</h1>\n`;
         break;
       case 'heading_2':
+        // Add divider before h2 (except first one) for section separation
+        if (html.includes('<h2>')) {
+          html += '<hr>\n';
+        }
         html += `<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
         break;
       case 'heading_3':
-        html += `<h3>${getRichText(b.heading_3?.rich_text)}</h3>\n`;
+        // Check if this looks like a subsection label (ends with colon)
+        const h3Text = getRichText(b.heading_3?.rich_text);
+        if (h3Text.endsWith(':')) {
+          // Render as h4 (uppercase subsection label)
+          html += `<h4>${h3Text}</h4>\n`;
+        } else {
+          html += `<h3>${h3Text}</h3>\n`;
+        }
         break;
       case 'paragraph':
-        const text = getRichText(b.paragraph?.rich_text);
-        if (text) html += `<p>${text}</p>\n`;
+        const paraText = getRichText(b.paragraph?.rich_text);
+        if (paraText) html += `<p>${paraText}</p>\n`;
         break;
       case 'bulleted_list_item':
-        html += `<li>${getRichText(b.bulleted_list_item?.rich_text)}</li>\n`;
+        // Open <ul> if not already in a bulleted list
+        if (!inBulletedList) {
+          if (inNumberedList) {
+            html += '</ol>\n';
+            inNumberedList = false;
+          }
+          html += '<ul>\n';
+          inBulletedList = true;
+        }
+        html += `  <li>${getRichText(b.bulleted_list_item?.rich_text)}</li>\n`;
         break;
       case 'numbered_list_item':
-        html += `<li>${getRichText(b.numbered_list_item?.rich_text)}</li>\n`;
+        // Open <ol> if not already in a numbered list
+        if (!inNumberedList) {
+          if (inBulletedList) {
+            html += '</ul>\n';
+            inBulletedList = false;
+          }
+          html += '<ol>\n';
+          inNumberedList = true;
+        }
+        html += `  <li>${getRichText(b.numbered_list_item?.rich_text)}</li>\n`;
         break;
       case 'quote':
         html += `<blockquote>${getRichText(b.quote?.rich_text)}</blockquote>\n`;
@@ -201,7 +250,7 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
         html += '<hr>\n';
         break;
       case 'callout':
-        html += `<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin:16px 0;">${getRichText(b.callout?.rich_text)}</div>\n`;
+        html += `<div style="background:#f8f5fa;padding:16px 20px;border-radius:8px;margin:16px 0;border-left:4px solid #503666;">${getRichText(b.callout?.rich_text)}</div>\n`;
         break;
       case 'image':
         // Handle images and GIFs from Notion
@@ -235,6 +284,9 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
         break;
     }
   }
+
+  // Close any remaining open lists
+  closeOpenLists();
 
   return { title, issueDate, highlights, contentHtml: html, collateralHtml };
 }
