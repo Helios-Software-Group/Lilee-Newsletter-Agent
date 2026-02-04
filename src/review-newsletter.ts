@@ -375,8 +375,10 @@ export async function reviewAndEditNewsletter(pageId: string): Promise<ReviewRes
   }
 }
 
-// Allow running directly for testing
-if (process.argv[2]) {
+// Allow running directly for testing (only when this is the main module)
+// Check if this script is being run directly (not imported)
+const isMainModule = process.argv[1]?.includes('review-newsletter');
+if (isMainModule && process.argv[2]) {
   const pageId = process.argv[2];
   reviewAndEditNewsletter(pageId)
     .then(result => {

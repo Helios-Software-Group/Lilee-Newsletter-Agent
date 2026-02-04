@@ -694,7 +694,10 @@ async function draftNewsletter() {
   };
 }
 
-// Run if called directly
-draftNewsletter().catch(console.error);
+// Run if called directly (only when this is the main module)
+const isMainModule = process.argv[1]?.includes('draft-newsletter');
+if (isMainModule) {
+  draftNewsletter().catch(console.error);
+}
 
 export { draftNewsletter };
