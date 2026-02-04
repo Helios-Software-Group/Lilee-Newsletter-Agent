@@ -218,45 +218,19 @@ function getRichText(richText: any[]): string {
 }
 
 /**
- * Get newsletter recipients from Loops
- * Returns contacts with newsletter subscription enabled
+ * Get newsletter recipients
+ *
+ * TODO: In production, integrate with Loops mailing lists or a Notion subscribers database
+ * For now, using hardcoded test recipients for initial testing
  */
 async function getRecipients(): Promise<LoopsContact[]> {
-  if (!LOOPS_API_KEY) {
-    console.log('   ⚠️  LOOPS_API_KEY not configured');
-    return [];
-  }
+  // Hardcoded test recipients for initial testing
+  const testRecipients: LoopsContact[] = [
+    { email: 'olivier@lilee.ai', firstName: 'Olivier' },
+  ];
 
-  try {
-    // Fetch contacts from Loops
-    // Note: You may need to filter by a specific property or list
-    const response = await fetch('https://app.loops.so/api/v1/contacts?limit=100', {
-      headers: {
-        'Authorization': `Bearer ${LOOPS_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      console.error('   ❌ Failed to fetch Loops contacts:', response.statusText);
-      return [];
-    }
-
-    const contacts = await response.json() as any[];
-
-    // Filter contacts with newsletter property set to true
-    // Adjust this filter based on your Loops contact schema
-    return contacts
-      .filter((c: any) => c.newsletter === true || c.subscribed === true)
-      .map((c: any) => ({
-        email: c.email,
-        firstName: c.firstName || c.first_name,
-        lastName: c.lastName || c.last_name,
-      }));
-  } catch (error) {
-    console.error('   ❌ Error fetching recipients:', error);
-    return [];
-  }
+  console.log(`   📧 Using ${testRecipients.length} test recipient(s)`);
+  return testRecipients;
 }
 
 /**
