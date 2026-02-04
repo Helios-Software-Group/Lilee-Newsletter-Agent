@@ -8,16 +8,16 @@
  * 4. (Separate trigger) Send approved newsletters via Loops
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-// Load .env from project root manually
+// Load .env from project root manually (only if exists - for local dev)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const envPath = join(__dirname, '..', '.env');
 
-try {
+if (existsSync(envPath)) {
   const envContent = readFileSync(envPath, 'utf-8');
   for (const line of envContent.split('\n')) {
     const trimmed = line.trim();
@@ -28,8 +28,6 @@ try {
       }
     }
   }
-} catch {
-  // In CI, env vars are already set
 }
 
 async function main() {
