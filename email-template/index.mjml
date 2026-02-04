@@ -126,8 +126,16 @@
     <mj-section background-color="#503666" padding="30px">
       <mj-column>
         <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="70px" align="center" padding-bottom="10px" />
-        <mj-text align="center" color="rgba(255,255,255,0.7)" font-size="13px">
-          Transform Healthcare Ops Fast
+        <mj-text align="center" color="rgba(255,255,255,0.7)" font-size="13px" padding-bottom="16px">
+          The agentic platform for population health management
+        </mj-text>
+        <mj-text align="center">
+          <a href="https://lilee.ai" style="text-decoration: none; margin-right: 20px;">
+            <img src="img/website-icon-white.png" alt="Website" width="24" style="vertical-align: middle;" />
+          </a>
+          <a href="https://www.linkedin.com/company/lilee-ai/" style="text-decoration: none;">
+            <img src="img/linkedin-icon-white.png" alt="LinkedIn" width="24" style="vertical-align: middle;" />
+          </a>
         </mj-text>
       </mj-column>
     </mj-section>
