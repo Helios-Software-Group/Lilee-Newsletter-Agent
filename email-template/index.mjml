@@ -37,10 +37,10 @@
     <mj-section background-color="#ffffff" padding="35px 30px 15px 30px">
       <mj-column>
         <mj-text font-size="28px" font-weight="bold" color="#503666" line-height="1.2">
-          {DATA_VARIABLE:issueTitle}
+          {DATA_VARIABLE:issue_title}
         </mj-text>
         <mj-text font-size="14px" color="#888888" padding-top="10px">
-          {DATA_VARIABLE:issueDate}
+          {DATA_VARIABLE:issue_date}
         </mj-text>
       </mj-column>
     </mj-section>
@@ -66,7 +66,7 @@
     <mj-section background-color="#ffffff" padding="20px 30px 20px 30px">
       <mj-column>
         <mj-text>
-          {DATA_VARIABLE:contentHtml}
+          {DATA_VARIABLE:content_html}
         </mj-text>
       </mj-column>
     </mj-section>
@@ -75,7 +75,7 @@
     <mj-section background-color="#ffffff" padding="0 30px 40px 30px">
       <mj-column>
         <mj-text>
-          {DATA_VARIABLE:collateralHtml}
+          {DATA_VARIABLE:collateral_html}
         </mj-text>
       </mj-column>
     </mj-section>
