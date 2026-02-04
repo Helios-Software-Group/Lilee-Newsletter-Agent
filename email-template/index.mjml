@@ -1,38 +1,41 @@
 <mjml>
   <mj-head>
+    <!-- Wider container for desktop (700px instead of default 600px) -->
+    <mj-breakpoint width="480px" />
     <mj-attributes>
       <mj-all font-family="Arial, Helvetica, sans-serif" />
       <mj-text font-size="16px" line-height="1.6" color="#333333" />
       <mj-section padding="0" />
+      <mj-body width="700px" />
     </mj-attributes>
     <mj-style>
-      /* Main headings */
-      h1 { color: #503666; margin: 0 0 10px 0; font-size: 28px; }
-      h2 { color: #503666; margin: 30px 0 15px 0; font-size: 22px; border-bottom: 2px solid #f0ebf4; padding-bottom: 10px; }
-      h3 { color: #503666; margin: 25px 0 10px 0; font-size: 18px; }
+      /* Main headings - larger for desktop */
+      h1 { color: #503666; margin: 0 0 12px 0; font-size: 32px; }
+      h2 { color: #503666; margin: 35px 0 18px 0; font-size: 26px; border-bottom: 2px solid #f0ebf4; padding-bottom: 12px; }
+      h3 { color: #503666; margin: 28px 0 12px 0; font-size: 20px; }
 
       /* Subsection headers - uppercase labels */
       h4 {
         color: #503666;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 700;
-        margin: 24px 0 10px 0;
+        margin: 28px 0 12px 0;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
 
-      /* Paragraphs */
-      p { margin: 0 0 15px 0; color: #333333; }
+      /* Paragraphs - slightly larger */
+      p { margin: 0 0 18px 0; color: #333333; font-size: 17px; line-height: 1.7; }
 
-      /* Lists */
-      ul, ol { margin: 15px 0; padding-left: 20px; }
-      li { margin-bottom: 10px; color: #333333; }
+      /* Lists - more spacing */
+      ul, ol { margin: 18px 0; padding-left: 24px; }
+      li { margin-bottom: 12px; color: #333333; font-size: 17px; line-height: 1.6; }
 
       /* Nested lists - indented */
       ul ul, ol ul, ul ol, ol ol {
-        margin-left: 20px;
-        margin-top: 8px;
-        margin-bottom: 8px;
+        margin-left: 24px;
+        margin-top: 10px;
+        margin-bottom: 10px;
       }
 
       /* Text styling */
@@ -40,81 +43,87 @@
       em { font-style: italic; color: #666666; }
       a { color: #503666; }
 
-      /* Blockquotes */
-      blockquote { border-left: 4px solid #503666; margin: 20px 0; padding: 15px 20px; background: #f8f5fa; font-style: italic; }
+      /* Blockquotes - more padding */
+      blockquote { border-left: 4px solid #503666; margin: 24px 0; padding: 18px 24px; background: #f8f5fa; font-style: italic; font-size: 17px; }
 
       /* Section dividers */
       hr {
         border: none;
         border-top: 2px solid #e8e0ed;
-        margin: 32px 0;
+        margin: 40px 0;
       }
 
       /* Feature section boxes */
       .feature-box {
         background: #faf8fb;
         border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
+        padding: 24px;
+        margin: 24px 0;
         border-left: 4px solid #503666;
       }
+
+      /* Images - full width with better spacing */
+      img { max-width: 100%; height: auto; margin: 20px 0; border-radius: 8px; }
+
+      /* Highlight box styling */
+      .highlight-box div { border-radius: 8px; border-left: 4px solid #503666; }
     </mj-style>
   </mj-head>
 
   <mj-body background-color="#f4f4f4">
 
     <!-- Header -->
-    <mj-section background-color="#503666" padding="20px 30px">
+    <mj-section background-color="#503666" padding="24px 40px">
       <mj-column>
-        <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="90px" align="left" />
+        <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="100px" align="left" />
       </mj-column>
       <mj-column>
-        <mj-text align="right" font-size="12px" color="rgba(255,255,255,0.7)" padding-top="10px">
+        <mj-text align="right" font-size="13px" color="rgba(255,255,255,0.7)" padding-top="12px">
           Product Newsletter
         </mj-text>
       </mj-column>
     </mj-section>
 
     <!-- Title -->
-    <mj-section background-color="#ffffff" padding="35px 30px 15px 30px">
+    <mj-section background-color="#ffffff" padding="45px 50px 20px 50px">
       <mj-column>
-        <mj-text font-size="28px" font-weight="bold" color="#503666" line-height="1.2">
+        <mj-text font-size="32px" font-weight="bold" color="#503666" line-height="1.2">
           {DATA_VARIABLE:issue_title}
         </mj-text>
-        <mj-text font-size="14px" color="#888888" padding-top="10px">
+        <mj-text font-size="15px" color="#888888" padding-top="12px">
           {DATA_VARIABLE:issue_date}
         </mj-text>
       </mj-column>
     </mj-section>
 
     <!-- Highlights -->
-    <mj-section background-color="#ffffff" padding="10px 30px 20px 30px">
+    <mj-section background-color="#ffffff" padding="15px 50px 25px 50px">
       <mj-column>
-        <mj-text background-color="#f8f5fa" padding="20px" border-radius="8px" border-left="4px solid #503666">
-          <strong style="color: #503666; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">This Week</strong><br/><br/>
+        <mj-text background-color="#f8f5fa" padding="24px" css-class="highlight-box">
+          <strong style="color: #503666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">This Week</strong><br/><br/>
           {DATA_VARIABLE:highlights}
         </mj-text>
       </mj-column>
     </mj-section>
 
     <!-- Divider -->
-    <mj-section background-color="#ffffff" padding="0 30px">
+    <mj-section background-color="#ffffff" padding="0 50px">
       <mj-column>
         <mj-divider border-color="#e0e0e0" border-width="1px" />
       </mj-column>
     </mj-section>
 
     <!-- Content -->
-    <mj-section background-color="#ffffff" padding="20px 30px 20px 30px">
+    <mj-section background-color="#ffffff" padding="25px 50px 25px 50px">
       <mj-column>
-        <mj-text>
+        <mj-text font-size="17px" line-height="1.7">
           {DATA_VARIABLE:content_html}
         </mj-text>
       </mj-column>
     </mj-section>
 
     <!-- Collateral (GIFs, images, videos) - optional -->
-    <mj-section background-color="#ffffff" padding="0 30px 40px 30px">
+    <mj-section background-color="#ffffff" padding="0 50px 50px 50px">
       <mj-column>
         <mj-text>
           {DATA_VARIABLE:collateral_html}
@@ -123,10 +132,10 @@
     </mj-section>
 
     <!-- Footer -->
-    <mj-section background-color="#503666" padding="30px">
+    <mj-section background-color="#503666" padding="35px">
       <mj-column>
-        <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="70px" align="center" padding-bottom="10px" />
-        <mj-text align="center" color="rgba(255,255,255,0.7)" font-size="13px">
+        <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="80px" align="center" padding-bottom="12px" />
+        <mj-text align="center" color="rgba(255,255,255,0.7)" font-size="14px">
           Transform Healthcare Ops Fast
         </mj-text>
       </mj-column>
