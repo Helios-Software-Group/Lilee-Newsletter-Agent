@@ -263,12 +263,12 @@ async function sendViaLoops(
           transactionalId: LOOPS_TRANSACTIONAL_ID,
           email: recipient.email,
           dataVariables: {
-            issueTitle: newsletter.title,
-            issueDate: newsletter.issueDate,
+            issue_title: newsletter.title,
+            issue_date: newsletter.issueDate,
             highlights: newsletter.highlights,
-            contentHtml: newsletter.contentHtml,
-            collateralHtml: newsletter.collateralHtml,
-            firstName: recipient.firstName || 'there',
+            content_html: newsletter.contentHtml,
+            collateral_html: newsletter.collateralHtml,
+            first_name: recipient.firstName || 'there',
           },
         }),
       });
