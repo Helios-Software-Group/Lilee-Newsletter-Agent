@@ -199,6 +199,36 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
       case 'callout':
         html += `<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin:16px 0;">${getRichText(b.callout?.rich_text)}</div>\n`;
         break;
+      case 'image':
+        // Handle images and GIFs from Notion
+        const imageUrl = b.image?.file?.url || b.image?.external?.url;
+        const imageCaption = b.image?.caption?.[0]?.plain_text || '';
+        if (imageUrl) {
+          html += `<img src="${imageUrl}" alt="${imageCaption}" style="max-width:100%;border-radius:8px;margin:16px 0;">\n`;
+          if (imageCaption) {
+            html += `<p style="text-align:center;font-size:14px;color:#666;margin-top:8px;">${imageCaption}</p>\n`;
+          }
+        }
+        break;
+      case 'video':
+        // Handle video embeds
+        const videoUrl = b.video?.file?.url || b.video?.external?.url;
+        if (videoUrl) {
+          html += `<p><a href="${videoUrl}" style="color:#503666;">📹 Watch Video</a></p>\n`;
+        }
+        break;
+      case 'embed':
+        // Handle embeds (GIFs from external sources like Giphy)
+        const embedUrl = b.embed?.url;
+        if (embedUrl) {
+          // Check if it's a GIF or image
+          if (embedUrl.includes('.gif') || embedUrl.includes('giphy') || embedUrl.includes('.png') || embedUrl.includes('.jpg')) {
+            html += `<img src="${embedUrl}" alt="Embedded content" style="max-width:100%;border-radius:8px;margin:16px 0;">\n`;
+          } else {
+            html += `<p><a href="${embedUrl}" style="color:#503666;">🔗 View Content</a></p>\n`;
+          }
+        }
+        break;
     }
   }
 
