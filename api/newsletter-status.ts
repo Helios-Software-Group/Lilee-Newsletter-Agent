@@ -141,8 +141,10 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   contentHtml: string;
   collateralHtml: string;
 }> {
+  console.log('   📝 Fetching page properties...');
   // Get page properties
   const page = await notion.pages.retrieve({ page_id: pageId }) as any;
+  console.log('   ✅ Page properties fetched');
 
   const title = page.properties.Issue?.title?.[0]?.plain_text || 'Newsletter';
   const issueDate = page.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0];
@@ -150,11 +152,13 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   // Collateral: raw HTML for GIFs/images stored in Notion "Collateral" rich_text property
   const collateralHtml = page.properties.Collateral?.rich_text?.[0]?.plain_text || '';
 
+  console.log('   📝 Fetching page blocks...');
   // Get page content blocks
   const blocks = await notion.blocks.children.list({
     block_id: pageId,
     page_size: 100,
   });
+  console.log(`   ✅ Fetched ${blocks.results.length} blocks`);
 
   let html = '';
 
@@ -402,8 +406,14 @@ export default async function handler(
 
     // Fetch newsletter content
     console.log('📄 Fetching newsletter content...');
-    const newsletter = await fetchNewsletterContent(notion, pageId);
-    console.log(`   Title: ${newsletter.title}`);
+    let newsletter;
+    try {
+      newsletter = await fetchNewsletterContent(notion, pageId);
+      console.log(`   Title: ${newsletter.title}`);
+    } catch (fetchError) {
+      console.error('❌ Error fetching content:', fetchError);
+      throw fetchError;
+    }
 
     // Get recipients
     console.log('📬 Getting email recipients...');
