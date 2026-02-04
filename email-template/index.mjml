@@ -74,12 +74,17 @@
 
     <!-- Header -->
     <mj-section background-color="#503666" padding="24px 40px">
-      <mj-column>
+      <mj-column width="40%">
         <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="100px" align="left" />
       </mj-column>
-      <mj-column>
-        <mj-text align="right" font-size="13px" color="rgba(255,255,255,0.7)" padding-top="12px">
-          Product Newsletter
+      <mj-column width="60%">
+        <mj-text align="right" padding-top="8px">
+          <a href="https://lilee.ai" style="text-decoration: none; margin-right: 16px;">
+            <img src="img/website-icon-white.png" alt="Website" width="22" style="vertical-align: middle;" />
+          </a>
+          <a href="https://www.linkedin.com/company/lilee-ai/" style="text-decoration: none;">
+            <img src="img/linkedin-icon-white.png" alt="LinkedIn" width="22" style="vertical-align: middle;" />
+          </a>
         </mj-text>
       </mj-column>
     </mj-section>
@@ -135,8 +140,16 @@
     <mj-section background-color="#503666" padding="35px">
       <mj-column>
         <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="80px" align="center" padding-bottom="12px" />
-        <mj-text align="center" color="rgba(255,255,255,0.7)" font-size="14px">
+        <mj-text align="center" color="rgba(255,255,255,0.7)" font-size="14px" padding-bottom="16px">
           Transform Healthcare Ops Fast
+        </mj-text>
+        <mj-text align="center">
+          <a href="https://lilee.ai" style="text-decoration: none; margin-right: 20px;">
+            <img src="img/website-icon-white.png" alt="Website" width="24" style="vertical-align: middle;" />
+          </a>
+          <a href="https://www.linkedin.com/company/lilee-ai/" style="text-decoration: none;">
+            <img src="img/linkedin-icon-white.png" alt="LinkedIn" width="24" style="vertical-align: middle;" />
+          </a>
         </mj-text>
       </mj-column>
     </mj-section>
