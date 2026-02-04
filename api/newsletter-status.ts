@@ -139,6 +139,7 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   issueDate: string;
   highlights: string;
   contentHtml: string;
+  collateralHtml: string;
 }> {
   // Get page properties
   const page = await notion.pages.retrieve({ page_id: pageId }) as any;
@@ -146,6 +147,8 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   const title = page.properties.Issue?.title?.[0]?.plain_text || 'Newsletter';
   const issueDate = page.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0];
   const highlights = page.properties.Highlights?.rich_text?.[0]?.plain_text || '';
+  // Collateral: raw HTML for GIFs/images stored in Notion "Collateral" rich_text property
+  const collateralHtml = page.properties.Collateral?.rich_text?.[0]?.plain_text || '';
 
   // Get page content blocks
   const blocks = await notion.blocks.children.list({
@@ -199,7 +202,7 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
     }
   }
 
-  return { title, issueDate, highlights, contentHtml: html };
+  return { title, issueDate, highlights, contentHtml: html, collateralHtml };
 }
 
 /**
@@ -237,7 +240,7 @@ async function getRecipients(): Promise<LoopsContact[]> {
  * Send newsletter via Loops transactional email
  */
 async function sendViaLoops(
-  newsletter: { title: string; issueDate: string; highlights: string; contentHtml: string },
+  newsletter: { title: string; issueDate: string; highlights: string; contentHtml: string; collateralHtml: string },
   recipients: LoopsContact[]
 ): Promise<{ sent: number; failed: number }> {
   if (!LOOPS_API_KEY || !LOOPS_TRANSACTIONAL_ID) {
@@ -260,11 +263,12 @@ async function sendViaLoops(
           transactionalId: LOOPS_TRANSACTIONAL_ID,
           email: recipient.email,
           dataVariables: {
-            issue_title: newsletter.title,
-            issue_date: newsletter.issueDate,
+            issueTitle: newsletter.title,
+            issueDate: newsletter.issueDate,
             highlights: newsletter.highlights,
-            content_html: newsletter.contentHtml,
-            first_name: recipient.firstName || 'there',
+            contentHtml: newsletter.contentHtml,
+            collateralHtml: newsletter.collateralHtml,
+            firstName: recipient.firstName || 'there',
           },
         }),
       });
