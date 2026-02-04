@@ -405,11 +405,11 @@ export default async function handler(
     console.log(`   Found ${recipients.length} recipients`);
 
     if (recipients.length === 0) {
-      console.log('   ⚠️  No recipients found. Marking as sent anyway.');
-      await markAsSent(notion, pageId);
+      console.log('   ⚠️  No recipients found.');
+      // Note: Notion automation handles status change to "Done" automatically
       return res.status(200).json({
         success: true,
-        message: 'No recipients configured. Newsletter marked as sent.',
+        message: 'No recipients configured.',
         sent: 0,
         failed: 0,
       });
@@ -420,9 +420,8 @@ export default async function handler(
     const result = await sendViaLoops(newsletter, recipients);
     console.log(`   Sent: ${result.sent}, Failed: ${result.failed}`);
 
-    // Mark as sent
-    console.log('✅ Updating status to "Sent"...');
-    await markAsSent(notion, pageId);
+    // Note: Notion automation handles status change to "Done" automatically
+    console.log('✅ Newsletter sent! Notion automation will update status.');
 
     return res.status(200).json({
       success: true,
