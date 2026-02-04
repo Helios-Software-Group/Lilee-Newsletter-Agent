@@ -315,14 +315,15 @@ async function sendViaLoops(
 }
 
 /**
- * Update newsletter status to "Sent" in Notion
+ * Update newsletter status to "Done" in Notion
+ * Note: The Newsletter database uses "Done" (not "Sent") as the completed status
  */
 async function markAsSent(notion: Client, pageId: string): Promise<void> {
   await notion.pages.update({
     page_id: pageId,
     properties: {
       Status: {
-        status: { name: 'Sent' },
+        status: { name: 'Done' },
       },
     },
   });
@@ -330,11 +331,12 @@ async function markAsSent(notion: Client, pageId: string): Promise<void> {
 
 /**
  * Check if newsletter is already sent (idempotency check)
+ * Note: The Newsletter database uses "Done" (not "Sent") as the completed status
  */
 async function isAlreadySent(notion: Client, pageId: string): Promise<boolean> {
   const page = await notion.pages.retrieve({ page_id: pageId }) as any;
   const status = page.properties.Status?.status?.name;
-  return status === 'Sent';
+  return status === 'Done';
 }
 
 /**
