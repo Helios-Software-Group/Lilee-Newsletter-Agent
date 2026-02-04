@@ -112,9 +112,17 @@ function validateRequest(req: VercelRequest): { valid: boolean; error?: string; 
   // Validate webhook secret
   if (WEBHOOK_SECRET) {
     const providedSecret = req.headers['x-webhook-secret'] as string;
+    console.log('🔐 Secret validation:', {
+      hasProvidedSecret: !!providedSecret,
+      providedSecretLength: providedSecret?.length || 0,
+      expectedSecretLength: WEBHOOK_SECRET.length,
+      secretsMatch: providedSecret === WEBHOOK_SECRET,
+    });
     if (providedSecret !== WEBHOOK_SECRET) {
       return { valid: false, error: 'Invalid webhook secret' };
     }
+  } else {
+    console.log('⚠️ No NOTION_WEBHOOK_SECRET configured - skipping validation');
   }
 
   // Log the raw body for debugging
@@ -329,6 +337,13 @@ async function sendViaLoops(
   newsletter: { title: string; issueDate: string; highlights: string; contentHtml: string; collateralHtml: string },
   recipients: LoopsContact[]
 ): Promise<{ sent: number; failed: number }> {
+  console.log('🔧 Loops config check:', {
+    hasApiKey: !!LOOPS_API_KEY,
+    apiKeyLength: LOOPS_API_KEY?.length || 0,
+    hasTransactionalId: !!LOOPS_TRANSACTIONAL_ID,
+    transactionalId: LOOPS_TRANSACTIONAL_ID?.substring(0, 10) + '...',
+  });
+
   if (!LOOPS_API_KEY || !LOOPS_TRANSACTIONAL_ID) {
     console.log('   ⚠️  Loops not configured. Skipping email send.');
     return { sent: 0, failed: 0 };
