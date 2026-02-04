@@ -63,10 +63,19 @@
     </mj-section>
 
     <!-- Content -->
-    <mj-section background-color="#ffffff" padding="20px 30px 40px 30px">
+    <mj-section background-color="#ffffff" padding="20px 30px 20px 30px">
       <mj-column>
         <mj-text>
           {DATA_VARIABLE:contentHtml}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Collateral (GIFs, images, videos) - optional -->
+    <mj-section background-color="#ffffff" padding="0 30px 40px 30px">
+      <mj-column>
+        <mj-text>
+          {DATA_VARIABLE:collateralHtml}
         </mj-text>
       </mj-column>
     </mj-section>

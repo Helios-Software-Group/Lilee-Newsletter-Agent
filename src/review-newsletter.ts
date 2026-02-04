@@ -215,6 +215,86 @@ async function clearPageContent(pageId: string): Promise<void> {
 }
 
 /**
+ * Parse inline markdown (bold, italic, code, links) into Notion rich_text array
+ */
+function parseInlineMarkdown(text: string): any[] {
+  const richText: any[] = [];
+
+  // Regex to match markdown patterns: **bold**, *italic*, `code`, [text](url)
+  const pattern = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|\[(.+?)\]\((.+?)\))/g;
+
+  let lastIndex = 0;
+  let match;
+
+  while ((match = pattern.exec(text)) !== null) {
+    // Add plain text before this match
+    if (match.index > lastIndex) {
+      const plainText = text.slice(lastIndex, match.index);
+      if (plainText) {
+        richText.push({
+          type: 'text',
+          text: { content: plainText },
+        });
+      }
+    }
+
+    const fullMatch = match[0];
+
+    if (fullMatch.startsWith('**') && fullMatch.endsWith('**')) {
+      // Bold: **text**
+      richText.push({
+        type: 'text',
+        text: { content: match[2] },
+        annotations: { bold: true },
+      });
+    } else if (fullMatch.startsWith('*') && fullMatch.endsWith('*') && !fullMatch.startsWith('**')) {
+      // Italic: *text*
+      richText.push({
+        type: 'text',
+        text: { content: match[3] },
+        annotations: { italic: true },
+      });
+    } else if (fullMatch.startsWith('`') && fullMatch.endsWith('`')) {
+      // Code: `text`
+      richText.push({
+        type: 'text',
+        text: { content: match[4] },
+        annotations: { code: true },
+      });
+    } else if (fullMatch.startsWith('[')) {
+      // Link: [text](url)
+      richText.push({
+        type: 'text',
+        text: { content: match[5], link: { url: match[6] } },
+      });
+    }
+
+    lastIndex = match.index + fullMatch.length;
+  }
+
+  // Add remaining plain text
+  if (lastIndex < text.length) {
+    const remaining = text.slice(lastIndex);
+    if (remaining) {
+      richText.push({
+        type: 'text',
+        text: { content: remaining },
+      });
+    }
+  }
+
+  // If no matches found, return the whole text as plain
+  if (richText.length === 0) {
+    richText.push({
+      type: 'text',
+      text: { content: text },
+    });
+  }
+
+  return richText;
+}
+
+/**
  * Convert markdown to Notion blocks and update the page
  */
 async function updatePageContent(pageId: string, markdown: string): Promise<void> {
@@ -230,7 +310,7 @@ async function updatePageContent(pageId: string, markdown: string): Promise<void
         object: 'block',
         type: 'heading_3',
         heading_3: {
-          rich_text: [{ type: 'text', text: { content: line.slice(4) } }],
+          rich_text: parseInlineMarkdown(line.slice(4)),
         },
       });
     } else if (line.startsWith('## ')) {
@@ -238,7 +318,7 @@ async function updatePageContent(pageId: string, markdown: string): Promise<void
         object: 'block',
         type: 'heading_2',
         heading_2: {
-          rich_text: [{ type: 'text', text: { content: line.slice(3) } }],
+          rich_text: parseInlineMarkdown(line.slice(3)),
         },
       });
     } else if (line.startsWith('# ')) {
@@ -246,7 +326,7 @@ async function updatePageContent(pageId: string, markdown: string): Promise<void
         object: 'block',
         type: 'heading_1',
         heading_1: {
-          rich_text: [{ type: 'text', text: { content: line.slice(2) } }],
+          rich_text: parseInlineMarkdown(line.slice(2)),
         },
       });
     }
@@ -256,7 +336,7 @@ async function updatePageContent(pageId: string, markdown: string): Promise<void
         object: 'block',
         type: 'bulleted_list_item',
         bulleted_list_item: {
-          rich_text: [{ type: 'text', text: { content: line.slice(2) } }],
+          rich_text: parseInlineMarkdown(line.slice(2)),
         },
       });
     }
@@ -266,7 +346,7 @@ async function updatePageContent(pageId: string, markdown: string): Promise<void
         object: 'block',
         type: 'numbered_list_item',
         numbered_list_item: {
-          rich_text: [{ type: 'text', text: { content: line.replace(/^\d+\.\s/, '') } }],
+          rich_text: parseInlineMarkdown(line.replace(/^\d+\.\s/, '')),
         },
       });
     }
@@ -276,7 +356,7 @@ async function updatePageContent(pageId: string, markdown: string): Promise<void
         object: 'block',
         type: 'quote',
         quote: {
-          rich_text: [{ type: 'text', text: { content: line.slice(2) } }],
+          rich_text: parseInlineMarkdown(line.slice(2)),
         },
       });
     }
@@ -294,7 +374,7 @@ async function updatePageContent(pageId: string, markdown: string): Promise<void
         object: 'block',
         type: 'paragraph',
         paragraph: {
-          rich_text: [{ type: 'text', text: { content: line } }],
+          rich_text: parseInlineMarkdown(line),
         },
       });
     }

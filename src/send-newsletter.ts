@@ -35,6 +35,7 @@ interface NewsletterToSend {
   highlights: string;
   primaryCustomer: string;
   content: string;
+  collateral: string; // HTML for embedded GIFs, images, videos
 }
 
 interface LoopsContact {
@@ -71,6 +72,9 @@ async function getReadyNewsletters(): Promise<NewsletterToSend[]> {
       highlights: p.properties.Highlights?.rich_text?.[0]?.plain_text || '',
       primaryCustomer: p.properties['Primary customer']?.rich_text?.[0]?.plain_text || '',
       content,
+      // Collateral: HTML for GIFs/images - stored in Notion "Collateral" rich_text property
+      // Example: <img src="https://your-cdn.com/demo.gif" alt="Demo" style="max-width:100%;border-radius:8px;">
+      collateral: p.properties.Collateral?.rich_text?.[0]?.plain_text || '',
     });
   }
 
@@ -143,17 +147,18 @@ function getRichText(richText: any[]): string {
 }
 
 /**
- * Get email recipients from Loops API
- * Note: This uses Loops contacts. You may need to adjust based on your Loops setup.
+ * Get email recipients
+ * Currently hardcoded for testing - can be expanded to pull from Loops audience or Notion
  */
 async function getEmailRecipients(): Promise<LoopsContact[]> {
-  // For now, return an empty array - you'll need to configure this based on your Loops setup
-  // Option 1: Query Loops API for contacts with a specific tag/list
-  // Option 2: Maintain a list in Notion
-  // Option 3: Hard-code a test list
+  // Hardcoded recipients for testing
+  // TODO: Expand to pull from Loops audience or Notion database
+  const recipients: LoopsContact[] = [
+    { email: 'olivier@lilee.ai', firstName: 'Olivier' },
+  ];
 
-  console.log('   ℹ️  Email recipients should be configured in Loops');
-  return [];
+  console.log(`   📧 Found ${recipients.length} recipient(s)`);
+  return recipients;
 }
 
 /**
@@ -192,6 +197,7 @@ async function sendViaLoops(
             issueDate: newsletter.issueDate,
             highlights: newsletter.highlights,
             contentHtml: newsletter.content,
+            collateralHtml: newsletter.collateral,
             firstName: recipient.firstName || 'there',
           },
         }),
@@ -329,6 +335,7 @@ async function sendSingleNewsletter(pageId: string): Promise<{
       highlights: page.properties.Highlights?.rich_text?.[0]?.plain_text || '',
       primaryCustomer: page.properties['Primary customer']?.rich_text?.[0]?.plain_text || '',
       content,
+      collateral: page.properties.Collateral?.rich_text?.[0]?.plain_text || '',
     };
 
     console.log(`\n📰 Sending: ${newsletter.title}`);
