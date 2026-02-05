@@ -101,17 +101,51 @@ async function getPageContent(pageId: string): Promise<string> {
         html += `<h1>${getRichText(b.heading_1?.rich_text)}</h1>\n`;
         break;
       case 'heading_2':
-        html += `<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
+        const h2Style = `
+          font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+          color: #503666;
+          margin: 32px 0 16px 0;
+          font-size: 22px;
+          font-weight: 600;
+          border-bottom: 3px solid #503666;
+          padding-bottom: 12px;
+        `.replace(/\s+/g, ' ').trim();
+        html += `<h2 style="${h2Style}">${getRichText(b.heading_2?.rich_text)}</h2>\n`;
         break;
       case 'heading_3':
         const h3Text = getRichText(b.heading_3?.rich_text);
         const plainText = getPlainText(b.heading_3?.rich_text);
-        // Subsection labels (end with ":") → render as h4 pill
+        // Subsection labels (end with ":") → render as h4 pill with inline styles
         // Feature titles (typically have emojis or no colon) → render as h3
         if (plainText.trim().endsWith(':')) {
-          html += `<h4>${h3Text}</h4>\n`;
+          // Inline styles for email compatibility (email clients strip <style> tags)
+          const h4Style = `
+            font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+            color: #503666;
+            font-size: 11px;
+            font-weight: 700;
+            margin: 24px 0 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: inline-block;
+            background: #f0ebf4;
+            padding: 8px 14px;
+            border-radius: 4px;
+            border-left: 3px solid #503666;
+          `.replace(/\s+/g, ' ').trim();
+          html += `<h4 style="${h4Style}">${h3Text}</h4>\n`;
         } else {
-          html += `<h3>${h3Text}</h3>\n`;
+          // Feature titles (h3) with inline styles
+          const h3Style = `
+            font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+            color: #503666;
+            margin: 28px 0 14px 0;
+            font-size: 19px;
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0ebf4;
+          `.replace(/\s+/g, ' ').trim();
+          html += `<h3 style="${h3Style}">${h3Text}</h3>\n`;
         }
         break;
       case 'paragraph':
@@ -125,10 +159,25 @@ async function getPageContent(pageId: string): Promise<string> {
         html += `<li>${getRichText(b.numbered_list_item?.rich_text)}</li>\n`;
         break;
       case 'quote':
-        html += `<blockquote>${getRichText(b.quote?.rich_text)}</blockquote>\n`;
+        const quoteStyle = `
+          border-left: 5px solid #503666;
+          margin: 24px 0;
+          padding: 20px 24px;
+          background: linear-gradient(135deg, #faf8fb 0%, #f5f0f8 100%);
+          font-style: italic;
+          border-radius: 0 8px 8px 0;
+        `.replace(/\s+/g, ' ').trim();
+        html += `<blockquote style="${quoteStyle}">${getRichText(b.quote?.rich_text)}</blockquote>\n`;
         break;
       case 'divider':
-        html += '<hr>\n';
+        const hrStyle = `
+          border: none;
+          height: 2px;
+          background: linear-gradient(90deg, #503666 0%, #8b6b9e 30%, #e8e0ed 70%, transparent 100%);
+          margin: 36px 0;
+          border-radius: 2px;
+        `.replace(/\s+/g, ' ').trim();
+        html += `<hr style="${hrStyle}">\n`;
         break;
       case 'callout':
         html += `<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin:16px 0;">${getRichText(b.callout?.rich_text)}</div>\n`;
