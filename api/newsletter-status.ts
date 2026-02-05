@@ -18,8 +18,12 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Client } from '@notionhq/client';
+import { createClient } from '@supabase/supabase-js';
 
 const WEBHOOK_SECRET = process.env.NOTION_WEBHOOK_SECRET;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'newsletter-images';
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const LOOPS_API_KEY = process.env.LOOPS_API_KEY;
 const LOOPS_TRANSACTIONAL_ID = process.env.LOOPS_TRANSACTIONAL_ID;
@@ -33,6 +37,68 @@ interface LoopsContact {
   email: string;
   firstName?: string;
   lastName?: string;
+}
+
+/**
+ * Upload an image from URL to Supabase Storage
+ * Returns the permanent public URL
+ */
+async function uploadImageToSupabase(imageUrl: string, pageId: string): Promise<string | null> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    console.log('   ⚠️  Supabase not configured, using original URL');
+    return null;
+  }
+
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    
+    // Download image from Notion
+    console.log(`   📥 Downloading image from Notion...`);
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      console.log(`   ❌ Failed to download image: ${response.status}`);
+      return null;
+    }
+    
+    const imageBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get('content-type') || 'image/png';
+    
+    // Determine file extension from content type
+    let ext = 'png';
+    if (contentType.includes('gif')) ext = 'gif';
+    else if (contentType.includes('jpeg') || contentType.includes('jpg')) ext = 'jpg';
+    else if (contentType.includes('webp')) ext = 'webp';
+    
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(7);
+    const filename = `${pageId}/${timestamp}-${randomId}.${ext}`;
+    
+    // Upload to Supabase
+    console.log(`   📤 Uploading to Supabase: ${filename}`);
+    const { data, error } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .upload(filename, imageBuffer, {
+        contentType,
+        upsert: true,
+      });
+    
+    if (error) {
+      console.log(`   ❌ Supabase upload error: ${error.message}`);
+      return null;
+    }
+    
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(SUPABASE_BUCKET)
+      .getPublicUrl(filename);
+    
+    console.log(`   ✅ Uploaded: ${publicUrlData.publicUrl}`);
+    return publicUrlData.publicUrl;
+  } catch (error) {
+    console.log(`   ❌ Error uploading to Supabase: ${error}`);
+    return null;
+  }
 }
 
 /**
@@ -283,10 +349,16 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
         break;
       case 'image':
         // Handle images and GIFs from Notion
-        const imageUrl = b.image?.file?.url || b.image?.external?.url;
+        let imageUrl = b.image?.file?.url || b.image?.external?.url;
         const imageCaption = b.image?.caption?.[0]?.plain_text || '';
         
         if (imageUrl) {
+          // Upload to Supabase for permanent URL
+          const permanentUrl = await uploadImageToSupabase(imageUrl, pageId);
+          if (permanentUrl) {
+            imageUrl = permanentUrl;
+          }
+          
           // Check if next block contains a video link
           let videoLink = '';
           let skipNext = false;
