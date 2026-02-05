@@ -104,7 +104,15 @@ async function getPageContent(pageId: string): Promise<string> {
         html += `<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
         break;
       case 'heading_3':
-        html += `<h3>${getRichText(b.heading_3?.rich_text)}</h3>\n`;
+        const h3Text = getRichText(b.heading_3?.rich_text);
+        const plainText = getPlainText(b.heading_3?.rich_text);
+        // Subsection labels (end with ":") → render as h4 pill
+        // Feature titles (typically have emojis or no colon) → render as h3
+        if (plainText.trim().endsWith(':')) {
+          html += `<h4>${h3Text}</h4>\n`;
+        } else {
+          html += `<h3>${h3Text}</h3>\n`;
+        }
         break;
       case 'paragraph':
         const text = getRichText(b.paragraph?.rich_text);
@@ -132,7 +140,15 @@ async function getPageContent(pageId: string): Promise<string> {
 }
 
 /**
- * Extract plain text from Notion rich text array
+ * Extract plain text from Notion rich text array (no HTML formatting)
+ */
+function getPlainText(richText: any[]): string {
+  if (!richText) return '';
+  return richText.map((t: any) => t.plain_text || '').join('');
+}
+
+/**
+ * Extract rich text from Notion rich text array with HTML formatting
  */
 function getRichText(richText: any[]): string {
   if (!richText) return '';

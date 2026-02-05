@@ -305,18 +305,27 @@ ${meetingsContext}
 - The title should make readers want to open the email
 
 **Formatting Guidelines (IMPORTANT):**
-- Use ## for main section headers (e.g., "## What Shipped This Week", "## Roadmap")
-- Use ### with emoji for feature headers (e.g., "### 🚀 Lilee Chat: Interactive Clinical Review Platform")
-- Use ### ending with colon for subsection labels - these will render as uppercase labels in email:
-  - "### What's Live:"
-  - "### Why This Matters for Your Operation:"
-  - "### Operational Impact:"
-  - "### Compliance Angle:"
+- Use ## for main section headers (e.g., "## What Shipped This Week", "## Roadmap", "## Customer Feedback", "## One Ask")
+- Use ### with emoji for feature titles (e.g., "### 🚀 Introducing Ellie: Your New Helpful Co-Pilot")
+- Use <h4> tags for subsection labels - these render as purple pill badges in email:
+  - <h4>What's Live:</h4>
+  - <h4>Why This Matters for Your Operation:</h4>
+  - <h4>Operational Impact:</h4>
+  - <h4>Compliance Angle:</h4>
+  - <h4>What's In Progress:</h4>
 - Use bullet points (-) for lists
 - **BOLD all new feature names, product names, and key terms** when first mentioned in a paragraph (e.g., "This week we're introducing **Lilee Chat**—a conversational interface...")
 - Use **bold** for metric lead-ins (e.g., "**Reduced Review TAT**: 40% faster...")
 - Add --- divider between major feature sections for visual separation
 - Use > for customer quotes in blockquotes
+
+**STATUS BADGES (use inline HTML spans):**
+For feature titles, add status indicators using these classes:
+- <span class="status-live">Live</span> - for features currently available
+- <span class="status-testing">In Testing</span> - for features in beta/testing
+- <span class="status-coming">Coming Soon</span> - for upcoming features
+
+Example: ### 🚀 Introducing Ellie <span class="status-live">Live</span>
 
 **TABLE FORMATTING (CRITICAL):**
 - DO NOT use markdown table syntax (| pipes) - it won't render in email
@@ -683,6 +692,17 @@ function convertMarkdownToBlocks(markdown: string): any[] {
           image: { type: 'external', external: { url } },
         });
       }
+      continue;
+    }
+
+    // Handle <h4> tags (subsection labels - render as heading_3 in Notion, h4 pill in email)
+    const h4Match = line.match(/^<h4>(.+?)<\/h4>$/);
+    if (h4Match) {
+      blocks.push({
+        object: 'block',
+        type: 'heading_3',
+        heading_3: { rich_text: [{ type: 'text', text: { content: h4Match[1] } }] },
+      });
       continue;
     }
 
