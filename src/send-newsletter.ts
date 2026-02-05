@@ -69,7 +69,7 @@ async function getReadyNewsletters(): Promise<NewsletterToSend[]> {
       url: p.url,
       title: p.properties.Issue?.title?.[0]?.plain_text || 'Newsletter',
       issueDate: p.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0],
-      highlights: getRichText(p.properties.Highlights?.rich_text),
+      highlights: formatHighlightsPills(getRichText(p.properties.Highlights?.rich_text)),
       primaryCustomer: getRichText(p.properties['Primary customer']?.rich_text),
       content,
       // Collateral: HTML for GIFs/images - stored in Notion "Collateral" rich_text property
@@ -144,6 +144,17 @@ function getRichText(richText: any[]): string {
     if (t.href) text = `<a href="${t.href}">${text}</a>`;
     return text;
   }).join('');
+}
+
+/**
+ * Format highlights with inverse pill styling for bold/emphasized terms
+ * Converts <strong>text</strong> to white pills with coral text
+ */
+function formatHighlightsPills(html: string): string {
+  return html.replace(
+    /<strong>([^<]+)<\/strong>/g,
+    '<span style="display:inline-block;background:#ffffff;color:#FE8383;padding:2px 10px;border-radius:14px;font-weight:600;margin:0 2px;">$1</span>'
+  );
 }
 
 /**
@@ -332,7 +343,7 @@ async function sendSingleNewsletter(pageId: string): Promise<{
       url: page.url,
       title: page.properties.Issue?.title?.[0]?.plain_text || 'Newsletter',
       issueDate: page.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0],
-      highlights: getRichText(page.properties.Highlights?.rich_text),
+      highlights: formatHighlightsPills(getRichText(page.properties.Highlights?.rich_text)),
       primaryCustomer: getRichText(page.properties['Primary customer']?.rich_text),
       content,
       collateral: page.properties.Collateral?.rich_text?.[0]?.plain_text || '',
