@@ -201,13 +201,39 @@ async function getPageContent(pageId: string): Promise<string> {
         const imageCaption = b.image?.caption?.[0]?.plain_text || '';
         
         if (imageUrl) {
-          // Check if next block is a paragraph with just a link (video URL for mobile)
+          // Check if next block is a paragraph that looks like a video link
           let videoLink = '';
           if (nextBlock?.type === 'paragraph') {
             const nextRichText = nextBlock.paragraph?.rich_text || [];
-            if (nextRichText.length === 1 && nextRichText[0]?.href) {
-              videoLink = nextRichText[0].href;
-              i++; // Skip the link paragraph since we're using it
+            // Check for a link - either as href or as text that looks like a URL
+            if (nextRichText.length >= 1) {
+              const firstItem = nextRichText[0];
+              const plainText = firstItem?.plain_text || '';
+              const href = firstItem?.href || '';
+              
+              // Detect if it's a video/screen share link
+              const isVideoLink = href && (
+                href.includes('loom.com') || 
+                href.includes('screen.studio') || 
+                href.includes('youtube.com') || 
+                href.includes('youtu.be') ||
+                href.includes('vimeo.com')
+              );
+              const isVideoText = plainText && (
+                plainText.includes('loom.com') || 
+                plainText.includes('screen.studio') || 
+                plainText.includes('youtube.com') || 
+                plainText.includes('youtu.be') ||
+                plainText.includes('vimeo.com')
+              );
+              
+              if (isVideoLink) {
+                videoLink = href;
+                i++; // Skip the link paragraph
+              } else if (isVideoText && plainText.startsWith('http')) {
+                videoLink = plainText;
+                i++; // Skip the link paragraph
+              }
             }
           }
           
