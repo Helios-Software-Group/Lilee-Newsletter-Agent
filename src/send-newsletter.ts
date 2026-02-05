@@ -204,29 +204,14 @@ function getRichText(richText: any[]): string {
   return richText.map((t: any) => {
     let text = t.plain_text || '';
     
-    // Debug: Log annotations to see what Notion sends
-    if (t.annotations) {
-      const activeAnnotations = Object.entries(t.annotations)
-        .filter(([_, v]) => v === true)
-        .map(([k]) => k);
-      if (activeAnnotations.length > 0) {
-        console.log(`📝 Text "${text.substring(0, 30)}..." has annotations:`, activeAnnotations);
-      }
+    // Underline becomes coral highlight - process FIRST so other formatting wraps it
+    if (t.annotations?.underline) {
+      text = `<span style="background-color:#FE8383;color:#ffffff;padding:3px 6px;font-weight:bold;text-decoration:none;border-radius:3px;">${text}</span>`;
     }
     
     if (t.annotations?.bold) text = `<strong>${text}</strong>`;
     if (t.annotations?.italic) text = `<em>${text}</em>`;
     if (t.annotations?.code) text = `<code>${text}</code>`;
-    // Underline becomes coral highlight (inline styles for email compatibility)
-    if (t.annotations?.underline) {
-      console.log(`🖍️ Applying coral highlight to: "${text.substring(0, 50)}..."`);
-      text = `<span style="background-color:#FFD4D4;color:#333333;padding:2px 4px;border-radius:2px;display:inline;">${text}</span>`;
-    }
-    // Also check for strikethrough which Notion might use for highlighting
-    if (t.annotations?.strikethrough) {
-      console.log(`🖍️ Applying coral highlight (strikethrough) to: "${text.substring(0, 50)}..."`);
-      text = `<span style="background-color:#FFD4D4;color:#333333;padding:2px 4px;border-radius:2px;display:inline;text-decoration:none;">${text}</span>`;
-    }
     if (t.href) text = `<a href="${t.href}">${text}</a>`;
     return text;
   }).join('');
