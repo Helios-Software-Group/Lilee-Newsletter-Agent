@@ -202,9 +202,12 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
     }
   };
 
-  for (const block of blocks.results) {
-    const b = block as any;
+  const blockList = blocks.results as any[];
+  
+  for (let i = 0; i < blockList.length; i++) {
+    const b = blockList[i];
     const type = b.type;
+    const nextBlock = blockList[i + 1];
 
     // Skip collateral checklist and review questions sections
     if (type === 'heading_2') {
@@ -282,10 +285,47 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
         // Handle images and GIFs from Notion
         const imageUrl = b.image?.file?.url || b.image?.external?.url;
         const imageCaption = b.image?.caption?.[0]?.plain_text || '';
+        
         if (imageUrl) {
-          html += `<img src="${imageUrl}" alt="${imageCaption}" style="max-width:100%;border-radius:8px;margin:16px 0;">\n`;
-          if (imageCaption) {
-            html += `<p style="text-align:center;font-size:14px;color:#666;margin-top:8px;">${imageCaption}</p>\n`;
+          // Check if next block contains a video link
+          let videoLink = '';
+          let skipNext = false;
+          
+          if (nextBlock?.type === 'paragraph') {
+            const richText = nextBlock.paragraph?.rich_text || [];
+            const nextContent = richText.map((t: any) => t.plain_text || '').join('');
+            const nextHref = richText[0]?.href || '';
+            
+            // Check if it's a video link
+            const checkUrl = nextHref || nextContent;
+            const isVideo = checkUrl && (
+              checkUrl.includes('loom.com') || 
+              checkUrl.includes('screen.studio') || 
+              checkUrl.includes('youtube.com') || 
+              checkUrl.includes('youtu.be') ||
+              checkUrl.includes('vimeo.com') ||
+              checkUrl.includes('screencast')
+            );
+            
+            if (isVideo) {
+              videoLink = nextHref || nextContent;
+              skipNext = true;
+              console.log(`   🎬 Detected video link: ${videoLink}`);
+            }
+          }
+          
+          if (videoLink) {
+            // Wrap image in link for mobile users
+            html += `<a href="${videoLink}" target="_blank" style="display:block;text-decoration:none;">`;
+            html += `<img src="${imageUrl}" alt="${imageCaption}" style="max-width:100%;border-radius:8px;margin:16px 0;">`;
+            html += `</a>\n`;
+            html += `<p style="font-size:12px;color:#8b6b9e;margin:4px 0 16px 0;font-style:italic;">📱 Tap image to view video</p>\n`;
+            if (skipNext) i++; // Skip the link paragraph
+          } else {
+            html += `<img src="${imageUrl}" alt="${imageCaption}" style="max-width:100%;border-radius:8px;margin:16px 0;">\n`;
+            if (imageCaption) {
+              html += `<p style="text-align:center;font-size:14px;color:#666;margin-top:8px;">${imageCaption}</p>\n`;
+            }
           }
         }
         break;
@@ -324,6 +364,12 @@ function getRichText(richText: any[]): string {
   if (!richText) return '';
   return richText.map((t: any) => {
     let text = t.plain_text || '';
+    
+    // Underline becomes coral highlight - process FIRST
+    if (t.annotations?.underline) {
+      text = `<span style="background-color:#FE8383;color:#ffffff;padding:3px 6px;font-weight:bold;text-decoration:none;border-radius:3px;">${text}</span>`;
+    }
+    
     if (t.annotations?.bold) text = `<strong>${text}</strong>`;
     if (t.annotations?.italic) text = `<em>${text}</em>`;
     if (t.annotations?.code) text = `<code>${text}</code>`;
