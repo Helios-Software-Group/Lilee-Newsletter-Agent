@@ -51,13 +51,16 @@
       </mj-column>
     </mj-section>
 
-    <!-- Accent Bar - Purple and Coral -->
+    <!-- Accent Bar - Coral Gradient -->
     <mj-section padding="0">
-      <mj-column width="60%" padding="0">
-        <mj-divider border-color="#503666" border-width="8px" padding="0" />
-      </mj-column>
-      <mj-column width="40%" padding="0">
+      <mj-column width="33%" padding="0">
         <mj-divider border-color="#FE8383" border-width="8px" padding="0" />
+      </mj-column>
+      <mj-column width="34%" padding="0">
+        <mj-divider border-color="#FFB8B8" border-width="8px" padding="0" />
+      </mj-column>
+      <mj-column width="33%" padding="0">
+        <mj-divider border-color="#FFCECE" border-width="8px" padding="0" />
       </mj-column>
     </mj-section>
 
