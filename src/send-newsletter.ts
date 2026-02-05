@@ -99,6 +99,14 @@ async function getPageContent(pageId: string): Promise<string> {
     
     // Look ahead for image + link pattern (for mobile video fallback)
     const nextBlock = blockList[i + 1];
+    
+    // Debug: log block types to understand structure
+    if (type === 'image' && nextBlock) {
+      console.log(`🖼️ Image block found, next block type: ${nextBlock.type}`);
+      if (nextBlock.type === 'paragraph') {
+        console.log(`   Paragraph content:`, JSON.stringify(nextBlock.paragraph?.rich_text?.slice(0, 2)));
+      }
+    }
 
     switch (type) {
       case 'heading_1':
@@ -201,39 +209,38 @@ async function getPageContent(pageId: string): Promise<string> {
         const imageCaption = b.image?.caption?.[0]?.plain_text || '';
         
         if (imageUrl) {
-          // Check if next block is a paragraph that looks like a video link
+          // Check if next block contains a video link (paragraph or bookmark)
           let videoLink = '';
-          if (nextBlock?.type === 'paragraph') {
-            const nextRichText = nextBlock.paragraph?.rich_text || [];
-            // Check for a link - either as href or as text that looks like a URL
-            if (nextRichText.length >= 1) {
-              const firstItem = nextRichText[0];
-              const plainText = firstItem?.plain_text || '';
-              const href = firstItem?.href || '';
-              
-              // Detect if it's a video/screen share link
-              const isVideoLink = href && (
-                href.includes('loom.com') || 
-                href.includes('screen.studio') || 
-                href.includes('youtube.com') || 
-                href.includes('youtu.be') ||
-                href.includes('vimeo.com')
-              );
-              const isVideoText = plainText && (
-                plainText.includes('loom.com') || 
-                plainText.includes('screen.studio') || 
-                plainText.includes('youtube.com') || 
-                plainText.includes('youtu.be') ||
-                plainText.includes('vimeo.com')
-              );
-              
-              if (isVideoLink) {
-                videoLink = href;
-                i++; // Skip the link paragraph
-              } else if (isVideoText && plainText.startsWith('http')) {
-                videoLink = plainText;
-                i++; // Skip the link paragraph
-              }
+          let skipNext = false;
+          
+          if (nextBlock) {
+            // Get all text/links from the next block
+            let nextContent = '';
+            let nextHref = '';
+            
+            if (nextBlock.type === 'paragraph') {
+              const richText = nextBlock.paragraph?.rich_text || [];
+              nextContent = richText.map((t: any) => t.plain_text || '').join('');
+              nextHref = richText[0]?.href || '';
+            } else if (nextBlock.type === 'bookmark') {
+              nextContent = nextBlock.bookmark?.url || '';
+              nextHref = nextContent;
+            }
+            
+            // Check if it's a video link (any URL with video platforms)
+            const checkUrl = nextHref || nextContent;
+            const isVideo = checkUrl && (
+              checkUrl.includes('loom.com') || 
+              checkUrl.includes('screen.studio') || 
+              checkUrl.includes('youtube.com') || 
+              checkUrl.includes('youtu.be') ||
+              checkUrl.includes('vimeo.com') ||
+              checkUrl.includes('screencast')
+            );
+            
+            if (isVideo) {
+              videoLink = nextHref || nextContent;
+              skipNext = true;
             }
           }
           
@@ -250,7 +257,8 @@ async function getPageContent(pageId: string): Promise<string> {
             html += `<img src="${imageUrl}" alt="${imageCaption}" style="${imgStyle}">`;
             html += `</a>\n`;
             // Add discrete mobile message
-            html += `<p style="font-size:12px;color:#8b6b9e;margin:4px 0 16px 0;font-style:italic;">📱 Mobile users: tap image to view video</p>\n`;
+            html += `<p style="font-size:12px;color:#8b6b9e;margin:4px 0 16px 0;font-style:italic;">📱 Tap image to view video</p>\n`;
+            if (skipNext) i++; // Skip the link block
           } else {
             html += `<img src="${imageUrl}" alt="${imageCaption}" style="${imgStyle}">\n`;
           }
