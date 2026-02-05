@@ -58,11 +58,15 @@
       </mj-column>
     </mj-section>
 
-    <!-- Highlights Box -->
+    <!-- Highlights Box - Header bar + white body -->
     <mj-section background-color="#ffffff" padding="20px 24px 24px 24px">
-      <mj-column background-color="#FE8383" border-radius="10px" padding="20px 22px">
-        <mj-text color="#ffffff" font-size="16px" line-height="1.65" font-weight="500" padding="0">
-          <span style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.75);margin-bottom:10px;">This Week's Highlights</span>
+      <mj-column padding="0">
+        <!-- Header bar -->
+        <mj-text background-color="#FE8383" color="#ffffff" font-size="12px" font-weight="700" padding="12px 20px" text-transform="uppercase" letter-spacing="1.5px" border-radius="10px 10px 0 0">
+          ✨ This Week's Highlights
+        </mj-text>
+        <!-- Body -->
+        <mj-text background-color="#FFF5F5" color="#503666" font-size="16px" line-height="1.7" font-weight="500" padding="18px 20px" border-radius="0 0 10px 10px">
           {DATA_VARIABLE:highlights}
         </mj-text>
       </mj-column>

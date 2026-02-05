@@ -153,7 +153,7 @@ function getRichText(richText: any[]): string {
 function formatHighlightsPills(html: string): string {
   return html.replace(
     /<strong>([^<]+)<\/strong>/g,
-    '<span style="display:inline-block;background:#ffffff;color:#503666;padding:2px 10px;border-radius:14px;font-weight:600;margin:0 2px;">$1</span>'
+    '<span style="display:inline-block;background:#FE8383;color:#ffffff;padding:3px 12px;border-radius:14px;font-weight:600;margin:0 2px;">$1</span>'
   );
 }
 
