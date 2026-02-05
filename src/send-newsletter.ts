@@ -91,10 +91,14 @@ async function getPageContent(pageId: string): Promise<string> {
   });
 
   let html = '';
+  const blockList = blocks.results as any[];
 
-  for (const block of blocks.results) {
-    const b = block as any;
+  for (let i = 0; i < blockList.length; i++) {
+    const b = blockList[i];
     const type = b.type;
+    
+    // Look ahead for image + link pattern (for mobile video fallback)
+    const nextBlock = blockList[i + 1];
 
     switch (type) {
       case 'heading_1':
@@ -191,6 +195,40 @@ async function getPageContent(pageId: string): Promise<string> {
         break;
       case 'callout':
         html += `<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin:16px 0;">${getRichText(b.callout?.rich_text)}</div>\n`;
+        break;
+      case 'image':
+        const imageUrl = b.image?.file?.url || b.image?.external?.url || '';
+        const imageCaption = b.image?.caption?.[0]?.plain_text || '';
+        
+        if (imageUrl) {
+          // Check if next block is a paragraph with just a link (video URL for mobile)
+          let videoLink = '';
+          if (nextBlock?.type === 'paragraph') {
+            const nextRichText = nextBlock.paragraph?.rich_text || [];
+            if (nextRichText.length === 1 && nextRichText[0]?.href) {
+              videoLink = nextRichText[0].href;
+              i++; // Skip the link paragraph since we're using it
+            }
+          }
+          
+          const imgStyle = `
+            max-width: 100%;
+            border-radius: 8px;
+            display: block;
+            margin: 16px 0;
+          `.replace(/\s+/g, ' ').trim();
+          
+          if (videoLink) {
+            // Wrap image in link for mobile users
+            html += `<a href="${videoLink}" target="_blank" style="display:block;text-decoration:none;">`;
+            html += `<img src="${imageUrl}" alt="${imageCaption}" style="${imgStyle}">`;
+            html += `</a>\n`;
+            // Add discrete mobile message
+            html += `<p style="font-size:12px;color:#8b6b9e;margin:4px 0 16px 0;font-style:italic;">📱 Mobile users: tap image to view video</p>\n`;
+          } else {
+            html += `<img src="${imageUrl}" alt="${imageCaption}" style="${imgStyle}">\n`;
+          }
+        }
         break;
     }
   }
