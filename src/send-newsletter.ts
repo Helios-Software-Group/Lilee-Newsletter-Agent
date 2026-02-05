@@ -204,21 +204,28 @@ function getRichText(richText: any[]): string {
   return richText.map((t: any) => {
     let text = t.plain_text || '';
     
-    // Debug: log annotations to see what's coming from Notion
+    // Debug: Log annotations to see what Notion sends
     if (t.annotations) {
-      const hasAny = t.annotations.bold || t.annotations.italic || t.annotations.underline || t.annotations.strikethrough;
-      if (hasAny) {
-        console.log(`📝 Annotations for "${text.substring(0, 30)}...":`, JSON.stringify(t.annotations));
+      const activeAnnotations = Object.entries(t.annotations)
+        .filter(([_, v]) => v === true)
+        .map(([k]) => k);
+      if (activeAnnotations.length > 0) {
+        console.log(`📝 Text "${text.substring(0, 30)}..." has annotations:`, activeAnnotations);
       }
     }
     
     if (t.annotations?.bold) text = `<strong>${text}</strong>`;
     if (t.annotations?.italic) text = `<em>${text}</em>`;
     if (t.annotations?.code) text = `<code>${text}</code>`;
-    // Underline becomes coral highlight - using table cell for maximum email compatibility
+    // Underline becomes coral highlight (inline styles for email compatibility)
     if (t.annotations?.underline) {
-      console.log(`🎨 Applying coral highlight to: "${text.substring(0, 50)}..."`);
-      text = `<span style="background-color:#FFD4D4;padding:2px 4px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;">${text}</span>`;
+      console.log(`🖍️ Applying coral highlight to: "${text.substring(0, 50)}..."`);
+      text = `<span style="background-color:#FFD4D4;color:#333333;padding:2px 4px;border-radius:2px;display:inline;">${text}</span>`;
+    }
+    // Also check for strikethrough which Notion might use for highlighting
+    if (t.annotations?.strikethrough) {
+      console.log(`🖍️ Applying coral highlight (strikethrough) to: "${text.substring(0, 50)}..."`);
+      text = `<span style="background-color:#FFD4D4;color:#333333;padding:2px 4px;border-radius:2px;display:inline;text-decoration:none;">${text}</span>`;
     }
     if (t.href) text = `<a href="${t.href}">${text}</a>`;
     return text;
