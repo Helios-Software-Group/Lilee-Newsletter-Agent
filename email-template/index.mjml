@@ -76,16 +76,20 @@
       </mj-column>
     </mj-section>
 
-    <!-- Highlights Box - Modern Card Design -->
-    <mj-section background-color="#ffffff" padding="12px 24px 28px 24px">
-      <mj-column border-radius="12px" padding="0" css-class="highlights-card">
-        <!-- Coral accent top bar -->
-        <mj-divider border-color="#FE8383" border-width="4px" padding="0" />
-        <!-- Main content area with light background -->
-        <mj-text padding="24px 28px 8px 28px" background-color="#faf8fb">
-          <span style="display:inline-block;background:#503666;color:#ffffff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">✨ HIGHLIGHTS</span>
+    <!-- Highlights Box - Premium Design -->
+    <mj-section background-color="#ffffff" padding="20px 24px 32px 24px">
+      <mj-column width="8px" padding="0" vertical-align="top">
+        <!-- Left coral accent bar -->
+        <mj-image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" width="8px" height="1px" padding="0" />
+      </mj-column>
+      <mj-column width="92%" padding="0" border-left="4px solid #FE8383">
+        <mj-text padding="20px 24px 0 24px">
+          <div style="font-size:32px;line-height:1;color:#FE8383;margin-bottom:4px;">✦</div>
         </mj-text>
-        <mj-text color="#503666" font-size="17px" line-height="1.8" font-weight="500" padding="16px 28px 24px 28px" background-color="#faf8fb">
+        <mj-text color="#503666" font-size="13px" font-weight="700" padding="0 24px 8px 24px" text-transform="uppercase" letter-spacing="2px">
+          This Week's Highlights
+        </mj-text>
+        <mj-text color="#333333" font-size="18px" line-height="1.7" padding="0 24px 20px 24px">
           {DATA_VARIABLE:highlights}
         </mj-text>
       </mj-column>
