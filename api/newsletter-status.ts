@@ -255,9 +255,22 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   });
   console.log(`   ✅ Fetched ${blocks.results.length} blocks`);
 
+  // First pass: collect h2 headings for table of contents
+  const tocItems: { id: string; text: string }[] = [];
+  for (const block of blocks.results) {
+    const b = block as any;
+    if (b.type === 'heading_2') {
+      const text = b.heading_2?.rich_text?.map((t: any) => t.plain_text || '').join('') || '';
+      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      tocItems.push({ id, text });
+    }
+  }
+  console.log(`   📋 Found ${tocItems.length} sections for TOC`);
+
   let html = '';
   let inBulletedList = false;
   let inNumberedList = false;
+  let tocIndex = 0; // Track which TOC item we're on
 
   // Helper to close any open list
   const closeOpenLists = () => {
@@ -272,6 +285,17 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   };
 
   const blockList = blocks.results as any[];
+  
+  // Generate Table of Contents if we have sections
+  if (tocItems.length > 0) {
+    html += `<div style="background:#f8f5fa;border-radius:8px;padding:16px 20px;margin-bottom:24px;">\n`;
+    html += `<p style="font-weight:600;color:#503666;margin:0 0 12px 0;font-size:14px;">📋 In This Issue</p>\n`;
+    html += `<ul style="margin:0;padding-left:20px;list-style:none;">\n`;
+    tocItems.forEach((item, idx) => {
+      html += `<li style="margin:6px 0;"><a href="#${item.id}" style="color:#8b6b9e;text-decoration:none;font-size:14px;">${idx + 1}. ${item.text}</a></li>\n`;
+    });
+    html += `</ul>\n</div>\n`;
+  }
   
   for (let i = 0; i < blockList.length; i++) {
     const b = blockList[i];
@@ -298,10 +322,13 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
         break;
       case 'heading_2':
         // Add divider before h2 (except first one) for section separation
-        if (html.includes('<h2>')) {
-          html += '<hr>\n';
+        if (html.includes('<h2')) {
+          html += '<hr style="border:none;border-top:2px solid #FE8383;margin:32px 0;">\n';
         }
-        html += `<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
+        // Add anchor ID for table of contents linking
+        const h2Id = tocItems[tocIndex]?.id || '';
+        tocIndex++;
+        html += `<h2 id="${h2Id}" style="padding-top:16px;">${getRichText(b.heading_2?.rich_text)}</h2>\n`;
         break;
       case 'heading_3':
         // Check if this looks like a subsection label (ends with colon)
