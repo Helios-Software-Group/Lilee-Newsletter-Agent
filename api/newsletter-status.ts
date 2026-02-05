@@ -378,20 +378,76 @@ function getRichText(richText: any[]): string {
   }).join('');
 }
 
+const SUBSCRIBERS_DB_ID = process.env.NOTION_SUBSCRIBERS_DB_ID;
+
+/**
+ * Get newsletter recipients from Notion subscribers database
+ */
+async function getSubscribersFromNotion(notion: Client): Promise<LoopsContact[]> {
+  if (!SUBSCRIBERS_DB_ID) {
+    console.log('   ⚠️  NOTION_SUBSCRIBERS_DB_ID not configured');
+    return [];
+  }
+
+  try {
+    const response = await notion.databases.query({
+      database_id: SUBSCRIBERS_DB_ID,
+      filter: {
+        property: 'Subscribed',
+        checkbox: { equals: true },
+      },
+    });
+
+    const subscribers: LoopsContact[] = [];
+    
+    for (const page of response.results) {
+      const p = page as any;
+      // Try common property name patterns
+      const email = p.properties.Email?.email || 
+                    p.properties.email?.email ||
+                    p.properties['E-mail']?.email;
+      const firstName = p.properties['First Name']?.rich_text?.[0]?.plain_text ||
+                        p.properties.FirstName?.rich_text?.[0]?.plain_text ||
+                        p.properties.Name?.title?.[0]?.plain_text?.split(' ')[0] ||
+                        p.properties.name?.title?.[0]?.plain_text?.split(' ')[0] ||
+                        '';
+      
+      if (email) {
+        subscribers.push({ email, firstName });
+      }
+    }
+
+    console.log(`   📋 Found ${subscribers.length} subscribers in Notion database`);
+    return subscribers;
+  } catch (error) {
+    console.error('   ❌ Error querying subscribers database:', error);
+    return [];
+  }
+}
+
 /**
  * Get newsletter recipients
- *
- * TODO: In production, integrate with Loops mailing lists or a Notion subscribers database
- * For now, using hardcoded test recipients for initial testing
+ * - Test send: only olivier@lilee.ai
+ * - Full send: all subscribers from Notion database
  */
-async function getRecipients(): Promise<LoopsContact[]> {
-  // Hardcoded test recipients for initial testing
-  const testRecipients: LoopsContact[] = [
-    { email: 'olivier@lilee.ai', firstName: 'Olivier' },
-  ];
+async function getRecipients(notion: Client, isTestSend: boolean): Promise<LoopsContact[]> {
+  if (isTestSend) {
+    const testRecipients: LoopsContact[] = [
+      { email: 'olivier@lilee.ai', firstName: 'Olivier' },
+    ];
+    console.log(`   🧪 Test send: using ${testRecipients.length} test recipient(s)`);
+    return testRecipients;
+  }
 
-  console.log(`   📧 Using ${testRecipients.length} test recipient(s)`);
-  return testRecipients;
+  // Full send - get subscribers from Notion
+  const subscribers = await getSubscribersFromNotion(notion);
+  
+  if (subscribers.length === 0) {
+    console.log('   ⚠️  No subscribers found, falling back to test recipient');
+    return [{ email: 'olivier@lilee.ai', firstName: 'Olivier' }];
+  }
+
+  return subscribers;
 }
 
 /**
@@ -519,14 +575,20 @@ export default async function handler(
 
   console.log('📋 Status change received:', { pageId, status });
 
-  // Only process "Ready" status
-  if (status !== 'Ready') {
-    console.log('   ℹ️  Status is not "Ready", skipping');
+  // Only process "Ready" or "Test Sent" status
+  const isTestSend = status === 'Test Sent';
+  const isFullSend = status === 'Ready';
+  
+  if (!isTestSend && !isFullSend) {
+    console.log(`   ℹ️  Status "${status}" does not trigger send`);
     return res.status(200).json({
       success: true,
-      message: `Status "${status}" does not trigger send. Only "Ready" triggers send.`,
+      message: `Status "${status}" does not trigger send. Only "Ready" or "Test Sent" triggers send.`,
     });
   }
+  
+  console.log(`   📧 Send type: ${isTestSend ? 'TEST (single recipient)' : 'FULL (all subscribers)'}`);
+  
 
   try {
     const notion = new Client({ auth: NOTION_API_KEY });
@@ -554,7 +616,7 @@ export default async function handler(
 
     // Get recipients
     console.log('📬 Getting email recipients...');
-    const recipients = await getRecipients();
+    const recipients = await getRecipients(notion, isTestSend);
     console.log(`   Found ${recipients.length} recipients`);
 
     if (recipients.length === 0) {
