@@ -44,12 +44,15 @@ interface LoopsContact {
  * Returns the permanent public URL
  */
 async function uploadImageToSupabase(imageUrl: string, pageId: string): Promise<string | null> {
+  console.log(`   🔍 Supabase config check: URL=${SUPABASE_URL ? 'SET' : 'NOT SET'}, KEY=${SUPABASE_SERVICE_KEY ? 'SET' : 'NOT SET'}, BUCKET=${SUPABASE_BUCKET}`);
+  
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     console.log('   ⚠️  Supabase not configured, using original URL');
     return null;
   }
 
   try {
+    console.log(`   🔗 Creating Supabase client for ${SUPABASE_URL}`);
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     
     // Download image from Notion
@@ -349,11 +352,14 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
         break;
       case 'image':
         // Handle images and GIFs from Notion
+        console.log(`   🖼️  Found image block, processing...`);
         let imageUrl = b.image?.file?.url || b.image?.external?.url;
         const imageCaption = b.image?.caption?.[0]?.plain_text || '';
+        console.log(`   🖼️  Image URL: ${imageUrl?.substring(0, 80)}...`);
         
         if (imageUrl) {
           // Upload to Supabase for permanent URL
+          console.log(`   📤 Attempting Supabase upload...`);
           const permanentUrl = await uploadImageToSupabase(imageUrl, pageId);
           if (permanentUrl) {
             imageUrl = permanentUrl;
