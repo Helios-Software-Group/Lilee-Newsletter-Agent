@@ -105,30 +105,136 @@
     h2 {
       font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
       color: #503666;
-      margin: 28px 0 14px 0;
+      margin: 32px 0 16px 0;
       font-size: 22px;
       font-weight: 600;
-      border-bottom: 2px solid #f0ebf4;
-      padding-bottom: 10px;
+      border-bottom: 3px solid #503666;
+      padding-bottom: 12px;
+      position: relative;
+    }
+
+    h2:first-of-type {
+      margin-top: 0;
     }
 
     h3 {
       font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
       color: #503666;
-      margin: 24px 0 10px 0;
-      font-size: 18px;
+      margin: 28px 0 14px 0;
+      font-size: 19px;
       font-weight: 600;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0ebf4;
     }
 
-    /* Subsection headers - uppercase labels */
+    /* Feature titles with status indicator */
+    h3 .status {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-left: 10px;
+      vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    h3 .status-live {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    h3 .status-testing {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    h3 .status-coming {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    /* Subsection headers - pill style labels */
     h4 {
       font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
       color: #503666;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      margin: 24px 0 10px 0;
+      margin: 24px 0 12px 0;
       text-transform: uppercase;
       letter-spacing: 1.5px;
+      display: inline-block;
+      background: #f0ebf4;
+      padding: 8px 14px;
+      border-radius: 4px;
+      border-left: 3px solid #503666;
+    }
+
+    /* Status pill variants */
+    .pill-live {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-left: 3px solid #4caf50;
+    }
+
+    .pill-progress {
+      display: inline-block;
+      background: #fff3e0;
+      color: #e65100;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-left: 3px solid #ff9800;
+    }
+
+    .pill-testing {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1565c0;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-left: 3px solid #2196f3;
+    }
+
+    .pill-impact {
+      display: inline-block;
+      background: #fce4ec;
+      color: #ad1457;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-left: 3px solid #e91e63;
+    }
+
+    .pill-compliance {
+      display: inline-block;
+      background: #f3e5f5;
+      color: #6a1b9a;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-left: 3px solid #9c27b0;
     }
 
     /* Paragraphs */
@@ -176,20 +282,41 @@
       color: #503666;
     }
 
-    /* Blockquotes */
+    /* Blockquotes - customer testimonials */
     blockquote {
-      border-left: 4px solid #503666;
-      margin: 20px 0;
-      padding: 15px 20px;
-      background: #f8f5fa;
+      border-left: 5px solid #503666;
+      margin: 24px 0;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #faf8fb 0%, #f5f0f8 100%);
       font-style: italic;
+      border-radius: 0 8px 8px 0;
+      position: relative;
+    }
+
+    blockquote::before {
+      content: '"';
+      font-family: Georgia, serif;
+      font-size: 48px;
+      color: #503666;
+      opacity: 0.2;
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      line-height: 1;
+    }
+
+    blockquote p {
+      margin: 0;
+      padding-left: 24px;
     }
 
     /* Section dividers */
     hr {
       border: none;
-      border-top: 2px solid #e8e0ed;
-      margin: 32px 0;
+      height: 2px;
+      background: linear-gradient(90deg, #503666 0%, #8b6b9e 30%, #e8e0ed 70%, transparent 100%);
+      margin: 36px 0;
+      border-radius: 2px;
     }
 
     /* Feature section boxes */
@@ -199,6 +326,101 @@
       padding: 20px;
       margin: 20px 0;
       border-left: 4px solid #503666;
+    }
+
+    /* Feature card - prominent section wrapper */
+    .feature-card {
+      background: #ffffff;
+      border: 1px solid #e8e0ed;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      box-shadow: 0 2px 8px rgba(80, 54, 102, 0.08);
+    }
+
+    .feature-card h3 {
+      margin-top: 0;
+      color: #503666;
+    }
+
+    /* Metrics/stats highlight box */
+    .metrics-box {
+      background: linear-gradient(135deg, #f8f5fa 0%, #f0ebf4 100%);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      border: 1px solid #e8e0ed;
+    }
+
+    /* Quote card for testimonials */
+    .quote-card {
+      background: #faf8fb;
+      border-radius: 12px;
+      padding: 24px 24px 24px 28px;
+      margin: 20px 0;
+      border-left: 5px solid #503666;
+      font-style: italic;
+    }
+
+    .quote-card .attribution {
+      font-style: normal;
+      font-weight: 600;
+      color: #503666;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    /* CTA box for calls to action */
+    .cta-box {
+      background: linear-gradient(135deg, #503666 0%, #6b4a7d 100%);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      text-align: center;
+    }
+
+    .cta-box p {
+      color: #ffffff;
+      margin-bottom: 16px;
+    }
+
+    .cta-box a.button {
+      display: inline-block;
+      background: #ffffff;
+      color: #503666;
+      padding: 12px 28px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* Badge inline with text */
+    .badge {
+      display: inline-block;
+      background: #f0ebf4;
+      color: #503666;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .badge-new {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .badge-beta {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .badge-soon {
+      background: #e3f2fd;
+      color: #1565c0;
     }
   </style>
 </head>
