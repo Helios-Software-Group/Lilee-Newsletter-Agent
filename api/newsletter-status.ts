@@ -365,9 +365,9 @@ function getRichText(richText: any[]): string {
   return richText.map((t: any) => {
     let text = t.plain_text || '';
     
-    // Underline becomes coral highlight - process FIRST
+    // Underline becomes soft coral highlight - like a highlighter marker
     if (t.annotations?.underline) {
-      text = `<span style="background-color:#FE8383;color:#ffffff;padding:3px 6px;font-weight:bold;text-decoration:none;border-radius:3px;">${text}</span>`;
+      text = `<span style="background-color:#FFE4E4;padding:2px 4px;border-radius:2px;">${text}</span>`;
     }
     
     if (t.annotations?.bold) text = `<strong>${text}</strong>`;
