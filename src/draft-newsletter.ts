@@ -294,6 +294,16 @@ ${meetingsContext}
 7. Include Customer Feedback section with quotes from meetings
 8. End with a specific "One Ask"
 
+**TITLE GUIDELINES (CRITICAL):**
+- DO NOT use "Lilee Product Update — [date]" - the date is already shown separately
+- Create an ORIGINAL, compelling title that highlights the main feature or theme
+- Examples of GOOD titles:
+  - "Introducing Lilee Chat: Your Clinical Review Copilot"
+  - "Faster Determinations, Better Audit Trails"
+  - "CMS-0057-F Ready: New Interoperability Features"
+  - "From 20 Clicks to 2: Streamlined Auth Workflows"
+- The title should make readers want to open the email
+
 **Formatting Guidelines (IMPORTANT):**
 - Use ## for main section headers (e.g., "## What Shipped This Week", "## Roadmap")
 - Use ### with emoji for feature headers (e.g., "### 🚀 Lilee Chat: Interactive Clinical Review Platform")
@@ -303,16 +313,33 @@ ${meetingsContext}
   - "### Operational Impact:"
   - "### Compliance Angle:"
 - Use bullet points (-) for lists
+- **BOLD all new feature names, product names, and key terms** when first mentioned in a paragraph (e.g., "This week we're introducing **Lilee Chat**—a conversational interface...")
 - Use **bold** for metric lead-ins (e.g., "**Reduced Review TAT**: 40% faster...")
 - Add --- divider between major feature sections for visual separation
 - Use > for customer quotes in blockquotes
 
+**TABLE FORMATTING (CRITICAL):**
+- DO NOT use markdown table syntax (| pipes) - it won't render in email
+- Instead, format roadmap/comparison data as styled HTML:
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+  <tr style="background:#f0ebf4;">
+    <th style="padding:12px;text-align:left;border-bottom:2px solid #503666;">Target</th>
+    <th style="padding:12px;text-align:left;border-bottom:2px solid #503666;">Capability</th>
+    <th style="padding:12px;text-align:left;border-bottom:2px solid #503666;">Regulatory Alignment</th>
+  </tr>
+  <tr>
+    <td style="padding:12px;border-bottom:1px solid #e0e0e0;">Feb W2</td>
+    <td style="padding:12px;border-bottom:1px solid #e0e0e0;">Feature description</td>
+    <td style="padding:12px;border-bottom:1px solid #e0e0e0;">CMS requirement</td>
+  </tr>
+</table>
+
 **Response Format (JSON):**
 {
-  "title": "Lilee Product Update — ${today}",
+  "title": "Creative, compelling title highlighting the main feature (NOT 'Lilee Product Update — date')",
   "highlights": "Brief 1-2 sentence summary of key updates",
   "primaryCustomer": "Name of primary customer mentioned, or empty string",
-  "content": "Full newsletter content in Markdown format",
+  "content": "Full newsletter content in Markdown format with HTML tables",
   "suggestedCollateral": ["List of screenshots, videos, or attachments that would enhance this newsletter"],
   "reviewQuestions": ["Questions the team should answer before sending", "e.g., 'Should we include the TAT metrics from ACV?'"]
 }
@@ -329,7 +356,7 @@ Respond with ONLY valid JSON.`
   } catch {
     console.error('Failed to parse Claude response, using fallback');
     return {
-      title: `Lilee Product Update — ${today}`,
+      title: 'This Week at Lilee: New Features & Updates',
       highlights: 'Weekly product updates',
       content: responseText,
       primaryCustomer: '',
@@ -541,48 +568,148 @@ async function addCollateralChecklist(
 }
 
 /**
- * Convert markdown content to Notion blocks (simplified)
+ * Parse inline markdown (bold, italic, links) into Notion rich_text array
+ */
+function parseInlineMarkdown(text: string): any[] {
+  const richText: any[] = [];
+  
+  // Pattern to match **bold**, *italic*, [links](url), ![images](url)
+  const pattern = /(\*\*(.+?)\*\*|\*([^*]+)\*|\[([^\]]+)\]\(([^)]+)\)|!\[([^\]]*)\]\(([^)]+)\))/g;
+  
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = pattern.exec(text)) !== null) {
+    // Add plain text before this match
+    if (match.index > lastIndex) {
+      const plain = text.slice(lastIndex, match.index);
+      if (plain) {
+        richText.push({ type: 'text', text: { content: plain } });
+      }
+    }
+    
+    if (match[2]) {
+      // **bold**
+      richText.push({
+        type: 'text',
+        text: { content: match[2] },
+        annotations: { bold: true },
+      });
+    } else if (match[3]) {
+      // *italic*
+      richText.push({
+        type: 'text',
+        text: { content: match[3] },
+        annotations: { italic: true },
+      });
+    } else if (match[4] && match[5]) {
+      // [link](url)
+      richText.push({
+        type: 'text',
+        text: { content: match[4], link: { url: match[5] } },
+      });
+    } else if (match[6] !== undefined && match[7]) {
+      // ![alt](url) - show as link in rich text
+      richText.push({
+        type: 'text',
+        text: { content: match[6] || 'Image', link: { url: match[7] } },
+      });
+    }
+    
+    lastIndex = match.index + match[0].length;
+  }
+  
+  // Add remaining text
+  if (lastIndex < text.length) {
+    const remaining = text.slice(lastIndex);
+    if (remaining) {
+      richText.push({ type: 'text', text: { content: remaining } });
+    }
+  }
+  
+  // Return original if no matches
+  if (richText.length === 0) {
+    richText.push({ type: 'text', text: { content: text } });
+  }
+  
+  return richText;
+}
+
+/**
+ * Convert markdown content to Notion blocks with proper rich text formatting
  */
 function convertMarkdownToBlocks(markdown: string): any[] {
   const blocks: any[] = [];
   const lines = markdown.split('\n');
+  
+  let htmlBuffer = '';
+  let inHtmlBlock = false;
 
   for (const line of lines) {
+    // Handle HTML blocks (tables)
+    if (line.trim().startsWith('<table') || inHtmlBlock) {
+      inHtmlBlock = true;
+      htmlBuffer += line + '\n';
+      
+      if (line.includes('</table>')) {
+        inHtmlBlock = false;
+        // Tables don't render in Notion - add placeholder
+        blocks.push({
+          object: 'block',
+          type: 'callout',
+          callout: {
+            icon: { emoji: '📊' },
+            rich_text: [{ 
+              type: 'text', 
+              text: { content: 'Roadmap table - renders in email preview' },
+            }],
+          },
+        });
+        htmlBuffer = '';
+      }
+      continue;
+    }
+    
     if (!line.trim()) continue;
 
-    // Headers (check longer prefixes first)
+    // Check for standalone image: ![alt](url)
+    const imgMatch = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (imgMatch) {
+      const url = imgMatch[2];
+      if (url.startsWith('http')) {
+        blocks.push({
+          object: 'block',
+          type: 'image',
+          image: { type: 'external', external: { url } },
+        });
+      }
+      continue;
+    }
+
+    // Headers
     if (line.startsWith('#### ')) {
-      // h4 in markdown -> h3 in Notion (will render as h4 in email via colon detection)
       blocks.push({
         object: 'block',
         type: 'heading_3',
-        heading_3: {
-          rich_text: [{ type: 'text', text: { content: line.slice(5) } }],
-        },
+        heading_3: { rich_text: parseInlineMarkdown(line.slice(5)) },
       });
     } else if (line.startsWith('### ')) {
       blocks.push({
         object: 'block',
         type: 'heading_3',
-        heading_3: {
-          rich_text: [{ type: 'text', text: { content: line.slice(4) } }],
-        },
+        heading_3: { rich_text: parseInlineMarkdown(line.slice(4)) },
       });
     } else if (line.startsWith('## ')) {
       blocks.push({
         object: 'block',
         type: 'heading_2',
-        heading_2: {
-          rich_text: [{ type: 'text', text: { content: line.slice(3) } }],
-        },
+        heading_2: { rich_text: parseInlineMarkdown(line.slice(3)) },
       });
     } else if (line.startsWith('# ')) {
       blocks.push({
         object: 'block',
         type: 'heading_1',
-        heading_1: {
-          rich_text: [{ type: 'text', text: { content: line.slice(2) } }],
-        },
+        heading_1: { rich_text: parseInlineMarkdown(line.slice(2)) },
       });
     }
     // Bullet points
@@ -590,9 +717,7 @@ function convertMarkdownToBlocks(markdown: string): any[] {
       blocks.push({
         object: 'block',
         type: 'bulleted_list_item',
-        bulleted_list_item: {
-          rich_text: [{ type: 'text', text: { content: line.slice(2) } }],
-        },
+        bulleted_list_item: { rich_text: parseInlineMarkdown(line.slice(2)) },
       });
     }
     // Blockquotes
@@ -600,9 +725,7 @@ function convertMarkdownToBlocks(markdown: string): any[] {
       blocks.push({
         object: 'block',
         type: 'quote',
-        quote: {
-          rich_text: [{ type: 'text', text: { content: line.slice(2) } }],
-        },
+        quote: { rich_text: parseInlineMarkdown(line.slice(2)) },
       });
     }
     // Dividers
@@ -618,9 +741,7 @@ function convertMarkdownToBlocks(markdown: string): any[] {
       blocks.push({
         object: 'block',
         type: 'paragraph',
-        paragraph: {
-          rich_text: [{ type: 'text', text: { content: line } }],
-        },
+        paragraph: { rich_text: parseInlineMarkdown(line) },
       });
     }
   }
