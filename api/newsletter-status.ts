@@ -270,7 +270,6 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   let html = '';
   let inBulletedList = false;
   let inNumberedList = false;
-  let tocIndex = 0; // Track which TOC item we're on
 
   // Helper to close any open list
   const closeOpenLists = () => {
@@ -292,7 +291,7 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
     html += `<p style="font-weight:600;color:#503666;margin:0 0 12px 0;font-size:14px;">📋 In This Issue</p>\n`;
     html += `<ul style="margin:0;padding-left:20px;list-style:none;">\n`;
     tocItems.forEach((item, idx) => {
-      html += `<li style="margin:6px 0;"><a href="#${item.id}" style="color:#8b6b9e;text-decoration:none;font-size:14px;">${idx + 1}. ${item.text}</a></li>\n`;
+      html += `<li style="margin:6px 0;color:#8b6b9e;font-size:14px;">${idx + 1}. ${item.text}</li>\n`;
     });
     html += `</ul>\n</div>\n`;
   }
@@ -318,10 +317,7 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
 
     switch (type) {
       case 'heading_1':
-        // Add anchor ID for table of contents linking
-        const h1Id = tocItems[tocIndex]?.id || '';
-        tocIndex++;
-        html += `<h1 id="${h1Id}" style="padding-top:16px;">${getRichText(b.heading_1?.rich_text)}</h1>\n`;
+        html += `<h1>${getRichText(b.heading_1?.rich_text)}</h1>\n`;
         break;
       case 'heading_2':
         // Add divider before h2 (except first one) for section separation
