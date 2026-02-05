@@ -203,12 +203,22 @@ function getRichText(richText: any[]): string {
   if (!richText) return '';
   return richText.map((t: any) => {
     let text = t.plain_text || '';
+    
+    // Debug: log annotations to see what's coming from Notion
+    if (t.annotations) {
+      const hasAny = t.annotations.bold || t.annotations.italic || t.annotations.underline || t.annotations.strikethrough;
+      if (hasAny) {
+        console.log(`📝 Annotations for "${text.substring(0, 30)}...":`, JSON.stringify(t.annotations));
+      }
+    }
+    
     if (t.annotations?.bold) text = `<strong>${text}</strong>`;
     if (t.annotations?.italic) text = `<em>${text}</em>`;
     if (t.annotations?.code) text = `<code>${text}</code>`;
-    // Underline becomes coral highlight (solid background for email compatibility)
+    // Underline becomes coral highlight - using table cell for maximum email compatibility
     if (t.annotations?.underline) {
-      text = `<mark style="background-color:#FFD4D4;color:inherit;padding:2px 4px;border-radius:2px;">${text}</mark>`;
+      console.log(`🎨 Applying coral highlight to: "${text.substring(0, 50)}..."`);
+      text = `<span style="background-color:#FFD4D4;padding:2px 4px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;">${text}</span>`;
     }
     if (t.href) text = `<a href="${t.href}">${text}</a>`;
     return text;
