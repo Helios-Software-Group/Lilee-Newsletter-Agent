@@ -140,18 +140,18 @@ function validateRequest(req: VercelRequest): { valid: boolean; error?: string; 
 }
 
 /**
- * Format highlights for maximum visual impact
+ * Format highlights for visual impact
  * - Converts line breaks to <br> tags
- * - Converts bold text to eye-catching coral pills
+ * - Converts bold text to coral color
  */
 function formatHighlights(html: string): string {
   return html
     // Convert newlines to <br> tags
     .replace(/\n/g, '<br>')
-    // Convert bold to vibrant coral pills with glow effect
+    // Convert bold to coral colored text
     .replace(
       /<strong>([^<]+)<\/strong>/g,
-      '<span style="display:inline-block;background:linear-gradient(135deg,#FE8383,#FF6B6B);color:#ffffff;padding:4px 14px;border-radius:20px;font-weight:700;margin:2px 4px;box-shadow:0 2px 8px rgba(254,131,131,0.4);">$1</span>'
+      '<strong style="color:#FE8383;font-weight:700;">$1</strong>'
     );
 }
 
