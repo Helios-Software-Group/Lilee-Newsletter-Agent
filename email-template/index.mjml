@@ -85,10 +85,10 @@
       </mj-column>
     </mj-section>
 
-    <!-- Purple Gradient Divider -->
+    <!-- Light Coral Divider -->
     <mj-section background-color="#ffffff" padding="0 24px">
       <mj-column>
-        <mj-divider border-color="#503666" border-width="3px" padding="0" />
+        <mj-divider border-color="#FFB8B8" border-width="3px" padding="0" />
       </mj-column>
     </mj-section>
 
