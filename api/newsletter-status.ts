@@ -140,14 +140,19 @@ function validateRequest(req: VercelRequest): { valid: boolean; error?: string; 
 }
 
 /**
- * Format highlights with inverse pill styling for bold/emphasized terms
- * Converts <strong>text</strong> to white pills with coral text
+ * Format highlights for maximum visual impact
+ * - Converts line breaks to <br> tags
+ * - Converts bold text to eye-catching coral pills
  */
-function formatHighlightsPills(html: string): string {
-  return html.replace(
-    /<strong>([^<]+)<\/strong>/g,
-    '<span style="display:inline-block;background:#FE8383;color:#ffffff;padding:3px 12px;border-radius:14px;font-weight:600;margin:0 2px;">$1</span>'
-  );
+function formatHighlights(html: string): string {
+  return html
+    // Convert newlines to <br> tags
+    .replace(/\n/g, '<br>')
+    // Convert bold to vibrant coral pills with glow effect
+    .replace(
+      /<strong>([^<]+)<\/strong>/g,
+      '<span style="display:inline-block;background:linear-gradient(135deg,#FE8383,#FF6B6B);color:#ffffff;padding:4px 14px;border-radius:20px;font-weight:700;margin:2px 4px;box-shadow:0 2px 8px rgba(254,131,131,0.4);">$1</span>'
+    );
 }
 
 /**
@@ -167,9 +172,9 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
 
   const title = page.properties.Issue?.title?.[0]?.plain_text || 'Newsletter';
   const issueDate = page.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0];
-  // Get highlights with inverse pill styling for bold terms
+  // Get highlights with visual formatting (line breaks + pills)
   const highlightsRaw = getRichText(page.properties.Highlights?.rich_text);
-  const highlights = formatHighlightsPills(highlightsRaw);
+  const highlights = formatHighlights(highlightsRaw);
   // Collateral: raw HTML for GIFs/images stored in Notion "Collateral" rich_text property
   const collateralHtml = page.properties.Collateral?.rich_text?.[0]?.plain_text || '';
 
