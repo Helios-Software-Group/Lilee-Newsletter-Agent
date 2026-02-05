@@ -8,7 +8,16 @@
   <!--<![endif]-->
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--[if !mso]><!-->
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!--<![endif]-->
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td, p, div, span, a, li, h1, h2, h3, h4 {
+      font-family: 'Helvetica Neue', Arial, sans-serif !important;
+    }
+  </style>
+  <![endif]-->
   <style type="text/css">
     #outlook a {
       padding: 0;
@@ -55,6 +64,51 @@
   <!--[if lte mso 11]>
     <style type="text/css">
       .mj-outlook-group-fix { width:100% !important; }
+    </style>
+    <![endif]-->
+  <!--[if mso]>
+    <style type="text/css">
+      /* Outlook-specific fixes */
+      table { border-collapse: collapse; }
+      .mso-line-height-fix { mso-line-height-rule: exactly; }
+      
+      /* Force solid backgrounds where gradients are used */
+      .mso-gradient-fix { background: #FE8383 !important; }
+      
+      /* Fix for display:inline-block elements */
+      span[style*="display:inline-block"] { mso-text-raise: 0; }
+      
+      /* Status pills - ensure they display properly */
+      h3 .status,
+      .pill-live,
+      .pill-progress,
+      .pill-testing,
+      .pill-impact,
+      .pill-compliance {
+        mso-text-raise: 0;
+      }
+      
+      /* h4 pill style headers */
+      h4 {
+        mso-text-raise: 0;
+      }
+      
+      /* Blockquote styling - no pseudo-elements */
+      blockquote {
+        background: #faf8fb !important;
+        border-radius: 0 !important;
+      }
+      
+      /* HR styling */
+      hr {
+        background: #503666 !important;
+        border-radius: 0 !important;
+      }
+      
+      /* Box shadows don't work */
+      .feature-card {
+        box-shadow: none !important;
+      }
     </style>
     <![endif]-->
   <style type="text/css">
@@ -285,12 +339,14 @@
     /* Coral highlight bar for underlined text */
     u {
       text-decoration: none;
+      background: #FFECEC;
       background: linear-gradient(to top, #FE8383 30%, transparent 30%);
       padding-bottom: 2px;
     }
 
     .highlight {
       text-decoration: none;
+      background: #FFECEC;
       background: linear-gradient(to top, #FE8383 30%, transparent 30%);
       padding-bottom: 2px;
     }
@@ -300,12 +356,14 @@
       border-left: 5px solid #503666;
       margin: 24px 0;
       padding: 20px 24px;
+      background: #faf8fb;
       background: linear-gradient(135deg, #faf8fb 0%, #f5f0f8 100%);
       font-style: italic;
       border-radius: 0 8px 8px 0;
       position: relative;
     }
 
+    /* Quote mark - doesn't work in Outlook but graceful degradation */
     blockquote::before {
       content: '"';
       font-family: Georgia, serif;
@@ -327,6 +385,7 @@
     hr {
       border: none;
       height: 2px;
+      background: #503666;
       background: linear-gradient(90deg, #503666 0%, #8b6b9e 30%, #e8e0ed 70%, transparent 100%);
       margin: 36px 0;
       border-radius: 2px;
@@ -358,6 +417,7 @@
 
     /* Metrics/stats highlight box */
     .metrics-box {
+      background: #f8f5fa;
       background: linear-gradient(135deg, #f8f5fa 0%, #f0ebf4 100%);
       border-radius: 8px;
       padding: 20px;
@@ -385,6 +445,7 @@
 
     /* CTA box for calls to action */
     .cta-box {
+      background: #503666;
       background: linear-gradient(135deg, #503666 0%, #6b4a7d 100%);
       border-radius: 12px;
       padding: 24px;
@@ -451,7 +512,13 @@
               <!-- Logo centered -->
               <img alt="Lilee" src="img/lilee-logo-white.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:110px;margin:0 auto 16px auto;" width="110" height="auto" />
               <!-- Product Update pill centered below -->
+              <!--[if mso]>
+              <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation"><tr><td style="background:#FE8383;padding:8px 16px;font-family:'Helvetica Neue', Arial, sans-serif;font-weight:600;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;mso-line-height-rule:exactly;">
+              <![endif]-->
               <span style="display:inline-block;background:#FE8383;padding:8px 16px;border-radius:20px;font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-weight:600;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;">Product Update</span>
+              <!--[if mso]>
+              </td></tr></table>
+              <![endif]-->
             </td>
           </tr>
         </tbody>
@@ -460,9 +527,8 @@
     <!--[if mso | IE]></td></tr></table><![endif]-->
 
     <!-- Accent Bar - Coral Gradient -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:700px;" width="700" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:linear-gradient(90deg, #FE8383 0%, #FFB8B8 50%, #FFCECE 100%);margin:0px auto;max-width:700px;height:8px;">
-    </div>
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:700px;" width="700" bgcolor="#FE8383"><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;height:8px;"><![endif]-->
+    <div style="background:#FE8383;background:linear-gradient(90deg, #FE8383 0%, #FFB8B8 50%, #FFCECE 100%);margin:0px auto;max-width:700px;height:8px;line-height:8px;font-size:8px;">&nbsp;</div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
 
     <!-- Title Section -->
@@ -479,7 +545,13 @@
                     <tr>
                       <td align="left" style="font-size:0px;padding:0 0 16px 0;word-break:break-word;">
                         <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:12px;line-height:1;text-align:left;color:#503666;">
+                          <!--[if mso]>
+                          <table border="0" cellpadding="0" cellspacing="0" role="presentation"><tr><td style="background:#f0ebf4;padding:6px 14px;font-weight:600;font-family:'Helvetica Neue', Arial, sans-serif;font-size:12px;color:#503666;">
+                          <![endif]-->
                           <span style="display:inline-block;background:#f0ebf4;padding:6px 14px;border-radius:4px;font-weight:600;">{DATA_VARIABLE:issue_date}</span>
+                          <!--[if mso]>
+                          </td></tr></table>
+                          <![endif]-->
                         </div>
                       </td>
                     </tr>
@@ -514,9 +586,14 @@
                       <td align="left" style="font-size:0px;padding:0;word-break:break-word;">
                         <table cellpadding="0" cellspacing="0" border="0" width="100%">
                           <tr>
-                            <td width="4" style="background:linear-gradient(180deg, #FE8383 0%, #FFB8B8 100%);border-radius:4px 0 0 4px;"></td>
+                            <td width="4" style="background:#FE8383;background:linear-gradient(180deg, #FE8383 0%, #FFB8B8 100%);" bgcolor="#FE8383"></td>
                             <td style="padding:24px 28px 24px 24px;">
+                              <!--[if !mso]><!-->
                               <div style="font-size:36px;line-height:1;color:#FE8383;margin-bottom:8px;">✦</div>
+                              <!--<![endif]-->
+                              <!--[if mso]>
+                              <div style="font-size:36px;line-height:1;color:#FE8383;margin-bottom:8px;font-family:Segoe UI Symbol,Segoe UI Emoji,Arial;">&#10022;</div>
+                              <![endif]-->
                               <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:12px;font-weight:700;color:#503666;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">This Week's Highlights</div>
                               <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:18px;line-height:1.7;color:#333333;">{DATA_VARIABLE:highlights}</div>
                             </td>
@@ -616,15 +693,23 @@
                     </tr>
                     <tr>
                       <td align="center" style="font-size:0px;padding:0;word-break:break-word;">
+                        <!--[if mso]>
+                        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://calendly.com/lilee-ai/discovery-call-lilee-ai" style="height:52px;v-text-anchor:middle;width:240px;" arcsize="15%" strokecolor="#FE8383" fillcolor="#FE8383">
+                          <w:anchorlock/>
+                          <center style="color:#ffffff;font-family:'Helvetica Neue', Arial, sans-serif;font-size:16px;font-weight:600;">Book a Discovery Call</center>
+                        </v:roundrect>
+                        <![endif]-->
+                        <!--[if !mso]><!-->
                         <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
                           <tbody>
                             <tr>
-                              <td align="center" bgcolor="#FE8383" role="presentation" style="border:none;border-radius:8px;cursor:auto;mso-padding-alt:16px 32px;background:#FE8383;">
-                                <a href="https://calendly.com/lilee-ai/discovery-call-lilee-ai" rel="noopener" style="display:inline-block;background:#FE8383;color:#ffffff;font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:16px;font-weight:600;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:16px 32px;mso-padding-alt:0px;border-radius:8px;" target="_blank">Book a Discovery Call →</a>
+                              <td align="center" bgcolor="#FE8383" role="presentation" style="border:none;border-radius:8px;cursor:auto;background:#FE8383;">
+                                <a href="https://calendly.com/lilee-ai/discovery-call-lilee-ai" rel="noopener" style="display:inline-block;background:#FE8383;color:#ffffff;font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:16px;font-weight:600;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:16px 32px;border-radius:8px;" target="_blank">Book a Discovery Call →</a>
                               </td>
                             </tr>
                           </tbody>
                         </table>
+                        <!--<![endif]-->
                       </td>
                     </tr>
                   </tbody>
@@ -638,9 +723,8 @@
     <!--[if mso | IE]></td></tr></table><![endif]-->
 
     <!-- Footer - Top Accent Bar (Coral Gradient) -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:700px;" width="700" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:linear-gradient(90deg, #FFCECE 0%, #FFB8B8 50%, #FE8383 100%);margin:0px auto;max-width:700px;height:8px;">
-    </div>
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:700px;" width="700" bgcolor="#FE8383"><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;height:8px;"><![endif]-->
+    <div style="background:#FE8383;background:linear-gradient(90deg, #FFCECE 0%, #FFB8B8 50%, #FE8383 100%);margin:0px auto;max-width:700px;height:8px;line-height:8px;font-size:8px;">&nbsp;</div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
 
     <!-- Footer - Main -->
@@ -669,11 +753,27 @@
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:14px 0 20px 0;word-break:break-word;">
-                        <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:rgba(255,255,255,0.8);">The agentic platform for<br>population health management</div>
+                        <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#d9cde3;">The agentic platform for<br>population health management</div>
                       </td>
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:0;word-break:break-word;">
+                        <!--[if mso]>
+                        <table border="0" cellpadding="0" cellspacing="0" role="presentation"><tr>
+                          <td style="background:#6b4a7d;padding:10px 12px;">
+                            <a href="https://lilee.ai" style="text-decoration:none;">
+                              <img src="img/website-icon-white.png" alt="Website" width="20" style="vertical-align:middle;" />
+                            </a>
+                          </td>
+                          <td width="12"></td>
+                          <td style="background:#6b4a7d;padding:10px 12px;">
+                            <a href="https://www.linkedin.com/company/lilee-ai/" style="text-decoration:none;">
+                              <img src="img/linkedin-icon-white.png" alt="LinkedIn" width="20" style="vertical-align:middle;" />
+                            </a>
+                          </td>
+                        </tr></table>
+                        <![endif]-->
+                        <!--[if !mso]><!-->
                         <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:16px;line-height:1;text-align:left;color:#ffffff;">
                           <a href="https://lilee.ai" style="text-decoration:none;display:inline-block;margin-right:12px;background:rgba(255,255,255,0.1);padding:10px 12px;border-radius:6px;">
                             <img src="img/website-icon-white.png" alt="Website" width="20" style="vertical-align:middle;" />
@@ -682,6 +782,7 @@
                             <img src="img/linkedin-icon-white.png" alt="LinkedIn" width="20" style="vertical-align:middle;" />
                           </a>
                         </div>
+                        <!--<![endif]-->
                       </td>
                     </tr>
                   </tbody>
@@ -693,10 +794,10 @@
                   <tbody>
                     <tr>
                       <td align="right" style="font-size:0px;padding:0;word-break:break-word;">
-                        <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;text-align:right;">Quick Links</div>
-                        <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:13px;line-height:2;color:rgba(255,255,255,0.7);text-align:right;">
-                          <a href="https://lilee.ai" style="color:rgba(255,255,255,0.8);text-decoration:none;">Visit Website</a><br>
-                          <a href="mailto:olivier@lilee.ai" style="color:rgba(255,255,255,0.8);text-decoration:none;">Contact Us</a>
+                        <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:11px;font-weight:600;color:#9b8aa8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;text-align:right;">Quick Links</div>
+                        <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:13px;line-height:2;color:#c4b5cf;text-align:right;">
+                          <a href="https://lilee.ai" style="color:#d9cde3;text-decoration:none;">Visit Website</a><br>
+                          <a href="mailto:olivier@lilee.ai" style="color:#d9cde3;text-decoration:none;">Contact Us</a>
                         </div>
                       </td>
                     </tr>
@@ -718,7 +819,7 @@
         <tbody>
           <tr>
             <td style="direction:ltr;font-size:0px;padding:14px 24px;text-align:center;">
-              <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:11px;color:rgba(255,255,255,0.4);text-align:center;">
+              <div style="font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;font-size:11px;color:#8a7a94;text-align:center;">
                 © 2026 Lilee AI. All rights reserved.
               </div>
             </td>
