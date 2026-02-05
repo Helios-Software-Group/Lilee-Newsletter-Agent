@@ -101,10 +101,20 @@ async function getPageContent(pageId: string): Promise<string> {
         html += `<h1>${getRichText(b.heading_1?.rich_text)}</h1>\n`;
         break;
       case 'heading_2':
+        // Coral divider before each major section
+        const dividerStyle = `
+          height: 3px;
+          background: linear-gradient(90deg, #FE8383 0%, #FFB8B8 50%, transparent 100%);
+          border: none;
+          margin: 36px 0 24px 0;
+          border-radius: 2px;
+        `.replace(/\s+/g, ' ').trim();
+        html += `<hr style="${dividerStyle}">\n`;
+        
         const h2Style = `
           font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
           color: #503666;
-          margin: 32px 0 16px 0;
+          margin: 0 0 16px 0;
           font-size: 22px;
           font-weight: 600;
           border-bottom: 3px solid #503666;

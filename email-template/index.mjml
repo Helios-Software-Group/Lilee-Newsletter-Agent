@@ -39,13 +39,11 @@
 
   <mj-body background-color="#ebe7ed" width="700px">
 
-    <!-- Header - Purple background with white logo -->
-    <mj-section background-color="#503666" padding="28px 24px">
-      <mj-column vertical-align="middle">
-        <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="110px" align="left" />
-      </mj-column>
-      <mj-column vertical-align="middle">
-        <mj-text align="right" padding="0">
+    <!-- Header - Purple background with white logo (stacks on mobile) -->
+    <mj-section background-color="#503666" padding="28px 24px" direction="ltr">
+      <mj-column width="100%" padding="0">
+        <mj-image src="img/lilee-logo-white.png" alt="Lilee" width="110px" align="center" padding="0 0 16px 0" />
+        <mj-text align="center" padding="0">
           <span style="display:inline-block;background:#FE8383;padding:8px 16px;border-radius:20px;font-weight:600;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;">Product Update</span>
         </mj-text>
       </mj-column>
@@ -92,13 +90,6 @@
         <mj-text color="#333333" font-size="18px" line-height="1.7" padding="0 24px 20px 24px">
           {DATA_VARIABLE:highlights}
         </mj-text>
-      </mj-column>
-    </mj-section>
-
-    <!-- Light Coral Divider -->
-    <mj-section background-color="#ffffff" padding="0 24px">
-      <mj-column>
-        <mj-divider border-color="#FFB8B8" border-width="3px" padding="0" />
       </mj-column>
     </mj-section>
 
