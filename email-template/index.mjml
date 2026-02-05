@@ -46,20 +46,17 @@
       </mj-column>
       <mj-column vertical-align="middle">
         <mj-text align="right" padding="0">
-          <span style="display:inline-block;background:rgba(255,255,255,0.15);padding:8px 16px;border-radius:20px;font-weight:600;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;">Product Update</span>
+          <span style="display:inline-block;background:#FE8383;padding:8px 16px;border-radius:20px;font-weight:600;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#ffffff;">Product Update</span>
         </mj-text>
       </mj-column>
     </mj-section>
 
-    <!-- Accent Bar - Purple to Coral gradient -->
+    <!-- Accent Bar - Purple and Coral -->
     <mj-section padding="0">
-      <mj-column width="40%" padding="0">
+      <mj-column width="60%" padding="0">
         <mj-divider border-color="#503666" border-width="8px" padding="0" />
       </mj-column>
-      <mj-column width="30%" padding="0">
-        <mj-divider border-color="#8b6b9e" border-width="8px" padding="0" />
-      </mj-column>
-      <mj-column width="30%" padding="0">
+      <mj-column width="40%" padding="0">
         <mj-divider border-color="#FE8383" border-width="8px" padding="0" />
       </mj-column>
     </mj-section>
@@ -113,15 +110,12 @@
       </mj-column>
     </mj-section>
 
-    <!-- Footer Accent Bar - Coral to Purple gradient -->
+    <!-- Footer Accent Bar - Coral and Purple -->
     <mj-section padding="0">
-      <mj-column width="30%" padding="0">
+      <mj-column width="40%" padding="0">
         <mj-divider border-color="#FE8383" border-width="8px" padding="0" />
       </mj-column>
-      <mj-column width="30%" padding="0">
-        <mj-divider border-color="#8b6b9e" border-width="8px" padding="0" />
-      </mj-column>
-      <mj-column width="40%" padding="0">
+      <mj-column width="60%" padding="0">
         <mj-divider border-color="#503666" border-width="8px" padding="0" />
       </mj-column>
     </mj-section>
