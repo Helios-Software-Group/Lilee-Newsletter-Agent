@@ -111,6 +111,22 @@
       </mj-column>
     </mj-section>
 
+    <!-- CTA Section - Book a Call -->
+    <mj-section background-color="#ffffff" padding="20px 24px 40px 24px">
+      <mj-column>
+        <mj-divider border-color="#f0ebf4" border-width="1px" padding="0 0 32px 0" />
+        <mj-text align="center" color="#503666" font-size="20px" font-weight="600" padding="0 0 8px 0">
+          Want to see these features in action?
+        </mj-text>
+        <mj-text align="center" color="#666666" font-size="15px" padding="0 0 24px 0">
+          Book a quick call with our team to discuss how Lilee can help your organization.
+        </mj-text>
+        <mj-button background-color="#FE8383" color="#ffffff" font-size="16px" font-weight="600" padding="0" border-radius="8px" href="https://calendly.com/lilee-ai/discovery-call-lilee-ai" inner-padding="16px 32px">
+          Book a Discovery Call →
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
     <!-- Footer Accent Bar - Coral Gradient -->
     <mj-section padding="0">
       <mj-column width="33%" padding="0">

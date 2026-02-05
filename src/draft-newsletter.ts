@@ -292,7 +292,9 @@ ${meetingsContext}
 5. Use payer language: TAT, LCD/NCD criteria, medical necessity, audit-ready, reviewer confidence
 6. Include a Roadmap section with regulatory alignment
 7. Include Customer Feedback section with quotes from meetings
-8. End with a specific "One Ask"
+8. ALWAYS end with a "One Ask" section that includes a CTA to book a discovery call: https://calendly.com/lilee-ai/discovery-call-lilee-ai
+   - Frame the ask around the main feature (e.g., "Want to see Ellie in action? Book a quick call with our team.")
+   - The CTA button is already in the email template, but the "One Ask" section should introduce it with context
 
 **TITLE GUIDELINES (CRITICAL):**
 - DO NOT use "Lilee Product Update — [date]" - the date is already shown separately
