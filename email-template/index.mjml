@@ -47,24 +47,24 @@
     </mj-section>
 
     <!-- Title Section -->
-    <mj-section background-color="#ffffff" padding="32px 24px 16px 24px">
+    <mj-section background-color="#ffffff" padding="32px 24px 8px 24px">
       <mj-column>
-        <mj-text padding="0 0 12px 0">
-          <span style="display:inline-block;background:#FFCDDE;padding:6px 14px;border-radius:6px;font-weight:600;font-size:13px;color:#503666;">{DATA_VARIABLE:issue_date}</span>
-        </mj-text>
         <mj-text font-size="32px" font-weight="700" color="#503666" line-height="1.2" letter-spacing="-0.5px" padding="0">
           {DATA_VARIABLE:issue_title}
+        </mj-text>
+        <mj-text padding="10px 0 0 0">
+          <span style="display:inline-block;background:#f0ebf4;padding:5px 12px;border-radius:4px;font-weight:500;font-size:12px;color:#503666;">{DATA_VARIABLE:issue_date}</span>
         </mj-text>
       </mj-column>
     </mj-section>
 
-    <!-- Highlights - Bold coral/salmon gradient box -->
-    <mj-section background-color="#ffffff" padding="16px 24px 24px 24px">
-      <mj-column background-color="#FE8383" border-radius="12px" padding="0">
-        <mj-text background-color="#FAA293" color="#503666" font-size="11px" font-weight="700" padding="14px 20px" text-transform="uppercase" letter-spacing="2px" border-radius="12px 12px 0 0">
+    <!-- Highlights Box - Clean single-color design -->
+    <mj-section background-color="#ffffff" padding="20px 24px 24px 24px">
+      <mj-column background-color="#FE8383" border-radius="10px" padding="20px 22px">
+        <mj-text color="rgba(255,255,255,0.85)" font-size="10px" font-weight="700" padding="0 0 8px 0" text-transform="uppercase" letter-spacing="1.5px">
           This Week's Highlights
         </mj-text>
-        <mj-text color="#ffffff" font-size="16px" line-height="1.7" font-weight="500" padding="16px 20px 20px 20px">
+        <mj-text color="#ffffff" font-size="16px" line-height="1.65" font-weight="500" padding="0">
           {DATA_VARIABLE:highlights}
         </mj-text>
       </mj-column>
