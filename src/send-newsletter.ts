@@ -100,11 +100,19 @@ async function getPageContent(pageId: string): Promise<string> {
     // Look ahead for image + link pattern (for mobile video fallback)
     const nextBlock = blockList[i + 1];
     
-    // Debug: log block types to understand structure
-    if (type === 'image' && nextBlock) {
-      console.log(`🖼️ Image block found, next block type: ${nextBlock.type}`);
-      if (nextBlock.type === 'paragraph') {
-        console.log(`   Paragraph content:`, JSON.stringify(nextBlock.paragraph?.rich_text?.slice(0, 2)));
+    // Debug: log ALL block types to understand structure
+    console.log(`📦 Block ${i}: type=${type}`);
+    if (type === 'paragraph') {
+      const rt = b.paragraph?.rich_text || [];
+      console.log(`   Paragraph has ${rt.length} rich_text items`);
+      rt.forEach((t: any, idx: number) => {
+        console.log(`   [${idx}] text="${t.plain_text?.substring(0, 50)}" href="${t.href || 'none'}"`);
+      });
+    }
+    if (type === 'image') {
+      console.log(`   Image URL: ${b.image?.file?.url || b.image?.external?.url || 'none'}`);
+      if (nextBlock) {
+        console.log(`   Next block: ${nextBlock.type}`);
       }
     }
 
