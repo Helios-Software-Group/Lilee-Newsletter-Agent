@@ -206,6 +206,10 @@ function getRichText(richText: any[]): string {
     if (t.annotations?.bold) text = `<strong>${text}</strong>`;
     if (t.annotations?.italic) text = `<em>${text}</em>`;
     if (t.annotations?.code) text = `<code>${text}</code>`;
+    // Underline becomes coral highlight bar (inline styles for email)
+    if (t.annotations?.underline) {
+      text = `<span style="text-decoration:none;background:linear-gradient(to top, #FE8383 30%, transparent 30%);padding-bottom:2px;">${text}</span>`;
+    }
     if (t.href) text = `<a href="${t.href}">${text}</a>`;
     return text;
   }).join('');
