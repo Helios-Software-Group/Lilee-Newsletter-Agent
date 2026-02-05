@@ -378,49 +378,68 @@ function getRichText(richText: any[]): string {
   }).join('');
 }
 
-const SUBSCRIBERS_DB_ID = process.env.NOTION_SUBSCRIBERS_DB_ID;
+const CONTACTS_DB_ID = process.env.NOTION_CONTACTS_DB_ID || '2fe09b01-2a5f-8092-b909-d7a91c8e9abc';
 
 /**
- * Get newsletter recipients from Notion subscribers database
+ * Get contacts from Notion filtered by audience
  */
-async function getSubscribersFromNotion(notion: Client): Promise<LoopsContact[]> {
-  if (!SUBSCRIBERS_DB_ID) {
-    console.log('   ⚠️  NOTION_SUBSCRIBERS_DB_ID not configured');
-    return [];
-  }
-
+async function getContactsByAudience(notion: Client, audiences: string[]): Promise<LoopsContact[]> {
   try {
+    console.log(`   🎯 Filtering contacts by audience: ${audiences.join(', ')}`);
+    
+    // Build filter for audience multi-select (OR condition)
+    const audienceFilters = audiences.map(audience => ({
+      property: 'Audience',
+      multi_select: { contains: audience },
+    }));
+    
     const response = await notion.databases.query({
-      database_id: SUBSCRIBERS_DB_ID,
-      filter: {
-        property: 'Subscribed',
-        checkbox: { equals: true },
-      },
+      database_id: CONTACTS_DB_ID,
+      filter: audienceFilters.length === 1 
+        ? audienceFilters[0]
+        : { or: audienceFilters },
     });
 
-    const subscribers: LoopsContact[] = [];
+    const contacts: LoopsContact[] = [];
     
     for (const page of response.results) {
       const p = page as any;
-      // Try common property name patterns
-      const email = p.properties.Email?.email || 
-                    p.properties.email?.email ||
-                    p.properties['E-mail']?.email;
-      const firstName = p.properties['First Name']?.rich_text?.[0]?.plain_text ||
-                        p.properties.FirstName?.rich_text?.[0]?.plain_text ||
-                        p.properties.Name?.title?.[0]?.plain_text?.split(' ')[0] ||
-                        p.properties.name?.title?.[0]?.plain_text?.split(' ')[0] ||
-                        '';
+      // Use E-Mail (with hyphen) as per the database schema
+      const email = p.properties['E-Mail']?.email;
+      const fullName = p.properties.Name?.title?.[0]?.plain_text || '';
+      const firstName = fullName.split(' ')[0] || '';
       
       if (email) {
-        subscribers.push({ email, firstName });
+        contacts.push({ email, firstName });
+        console.log(`      ✓ ${firstName} <${email}>`);
       }
     }
 
-    console.log(`   📋 Found ${subscribers.length} subscribers in Notion database`);
-    return subscribers;
+    console.log(`   📋 Found ${contacts.length} contacts matching audience`);
+    return contacts;
   } catch (error) {
-    console.error('   ❌ Error querying subscribers database:', error);
+    console.error('   ❌ Error querying contacts database:', error);
+    return [];
+  }
+}
+
+/**
+ * Get newsletter's audience from page properties
+ */
+async function getNewsletterAudience(notion: Client, pageId: string): Promise<string[]> {
+  try {
+    const page = await notion.pages.retrieve({ page_id: pageId }) as any;
+    const audienceProp = page.properties.Audience;
+    
+    if (audienceProp?.type === 'multi_select') {
+      return audienceProp.multi_select.map((o: any) => o.name);
+    } else if (audienceProp?.type === 'select' && audienceProp.select) {
+      return [audienceProp.select.name];
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('   ❌ Error fetching newsletter audience:', error);
     return [];
   }
 }
@@ -428,9 +447,9 @@ async function getSubscribersFromNotion(notion: Client): Promise<LoopsContact[]>
 /**
  * Get newsletter recipients
  * - Test send: only olivier@lilee.ai
- * - Full send: all subscribers from Notion database
+ * - Full send: contacts matching newsletter's audience
  */
-async function getRecipients(notion: Client, isTestSend: boolean): Promise<LoopsContact[]> {
+async function getRecipients(notion: Client, pageId: string, isTestSend: boolean): Promise<LoopsContact[]> {
   if (isTestSend) {
     const testRecipients: LoopsContact[] = [
       { email: 'olivier@lilee.ai', firstName: 'Olivier' },
@@ -439,15 +458,23 @@ async function getRecipients(notion: Client, isTestSend: boolean): Promise<Loops
     return testRecipients;
   }
 
-  // Full send - get subscribers from Notion
-  const subscribers = await getSubscribersFromNotion(notion);
+  // Get newsletter's audience
+  const audiences = await getNewsletterAudience(notion, pageId);
   
-  if (subscribers.length === 0) {
-    console.log('   ⚠️  No subscribers found, falling back to test recipient');
+  if (audiences.length === 0) {
+    console.log('   ⚠️  No audience set on newsletter, falling back to test recipient');
     return [{ email: 'olivier@lilee.ai', firstName: 'Olivier' }];
   }
 
-  return subscribers;
+  // Get contacts matching the audience
+  const contacts = await getContactsByAudience(notion, audiences);
+  
+  if (contacts.length === 0) {
+    console.log('   ⚠️  No contacts found for audience, falling back to test recipient');
+    return [{ email: 'olivier@lilee.ai', firstName: 'Olivier' }];
+  }
+
+  return contacts;
 }
 
 /**
@@ -616,7 +643,7 @@ export default async function handler(
 
     // Get recipients
     console.log('📬 Getting email recipients...');
-    const recipients = await getRecipients(notion, isTestSend);
+    const recipients = await getRecipients(notion, pageId, isTestSend);
     console.log(`   Found ${recipients.length} recipients`);
 
     if (recipients.length === 0) {
