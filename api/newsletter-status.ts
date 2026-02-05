@@ -156,7 +156,7 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
 
   const title = page.properties.Issue?.title?.[0]?.plain_text || 'Newsletter';
   const issueDate = page.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0];
-  const highlights = page.properties.Highlights?.rich_text?.[0]?.plain_text || '';
+  const highlights = getRichText(page.properties.Highlights?.rich_text);
   // Collateral: raw HTML for GIFs/images stored in Notion "Collateral" rich_text property
   const collateralHtml = page.properties.Collateral?.rich_text?.[0]?.plain_text || '';
 
