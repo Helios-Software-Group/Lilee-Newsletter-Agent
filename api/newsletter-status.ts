@@ -255,12 +255,12 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   });
   console.log(`   ✅ Fetched ${blocks.results.length} blocks`);
 
-  // First pass: collect h2 headings for table of contents
+  // First pass: collect h1 headings for table of contents
   const tocItems: { id: string; text: string }[] = [];
   for (const block of blocks.results) {
     const b = block as any;
-    if (b.type === 'heading_2') {
-      const text = b.heading_2?.rich_text?.map((t: any) => t.plain_text || '').join('') || '';
+    if (b.type === 'heading_1') {
+      const text = b.heading_1?.rich_text?.map((t: any) => t.plain_text || '').join('') || '';
       const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       tocItems.push({ id, text });
     }
@@ -318,17 +318,17 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
 
     switch (type) {
       case 'heading_1':
-        html += `<h1>${getRichText(b.heading_1?.rich_text)}</h1>\n`;
+        // Add anchor ID for table of contents linking
+        const h1Id = tocItems[tocIndex]?.id || '';
+        tocIndex++;
+        html += `<h1 id="${h1Id}" style="padding-top:16px;">${getRichText(b.heading_1?.rich_text)}</h1>\n`;
         break;
       case 'heading_2':
         // Add divider before h2 (except first one) for section separation
         if (html.includes('<h2')) {
           html += '<hr style="border:none;border-top:2px solid #FE8383;margin:32px 0;">\n';
         }
-        // Add anchor ID for table of contents linking
-        const h2Id = tocItems[tocIndex]?.id || '';
-        tocIndex++;
-        html += `<h2 id="${h2Id}" style="padding-top:16px;">${getRichText(b.heading_2?.rich_text)}</h2>\n`;
+        html += `<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
         break;
       case 'heading_3':
         // Check if this looks like a subsection label (ends with colon)
