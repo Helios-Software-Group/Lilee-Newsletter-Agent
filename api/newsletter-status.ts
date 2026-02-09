@@ -19,6 +19,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Client } from '@notionhq/client';
 import { createClient } from '@supabase/supabase-js';
+import { generateContentHtml, getRichText, formatHighlights } from '../src/html-generator.js';
 
 const WEBHOOK_SECRET = process.env.NOTION_WEBHOOK_SECRET;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -208,21 +209,6 @@ function validateRequest(req: VercelRequest): { valid: boolean; error?: string; 
   return { valid: true, pageId, status: status || 'Ready' };
 }
 
-/**
- * Format highlights for visual impact
- * - Converts line breaks to <br> tags
- * - Converts bold text to coral color
- */
-function formatHighlights(html: string): string {
-  return html
-    // Convert newlines to <br> tags
-    .replace(/\n/g, '<br>')
-    // Convert bold to coral colored text
-    .replace(
-      /<strong>([^<]+)<\/strong>/g,
-      '<strong style="color:#FE8383;font-weight:700;">$1</strong>'
-    );
-}
 
 /**
  * Fetch newsletter content from Notion
@@ -235,248 +221,25 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   collateralHtml: string;
 }> {
   console.log('   📝 Fetching page properties...');
-  // Get page properties
   const page = await notion.pages.retrieve({ page_id: pageId }) as any;
   console.log('   ✅ Page properties fetched');
 
   const title = page.properties.Issue?.title?.[0]?.plain_text || 'Newsletter';
   const issueDate = page.properties['Issue date']?.date?.start || new Date().toISOString().split('T')[0];
-  // Get highlights with visual formatting (line breaks + pills)
-  const highlightsRaw = getRichText(page.properties.Highlights?.rich_text);
-  const highlights = formatHighlights(highlightsRaw);
-  // Collateral: raw HTML for GIFs/images stored in Notion "Collateral" rich_text property
+  const highlights = formatHighlights(getRichText(page.properties.Highlights?.rich_text));
   const collateralHtml = page.properties.Collateral?.rich_text?.[0]?.plain_text || '';
 
   console.log('   📝 Fetching page blocks...');
-  // Get page content blocks
-  const blocks = await notion.blocks.children.list({
-    block_id: pageId,
-    page_size: 100,
-  });
+  const blocks = await notion.blocks.children.list({ block_id: pageId, page_size: 100 });
   console.log(`   ✅ Fetched ${blocks.results.length} blocks`);
 
-  // First pass: collect h1 headings for table of contents
-  const tocItems: { id: string; text: string }[] = [];
-  for (const block of blocks.results) {
-    const b = block as any;
-    if (b.type === 'heading_1') {
-      const text = b.heading_1?.rich_text?.map((t: any) => t.plain_text || '').join('') || '';
-      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      tocItems.push({ id, text });
-    }
-  }
-  console.log(`   📋 Found ${tocItems.length} sections for TOC`);
+  const contentHtml = await generateContentHtml(blocks.results as any[], {
+    includeToc: true,
+    uploadImage: (url, pid) => uploadImageToSupabase(url, pid),
+    pageId,
+  });
 
-  let html = '';
-  let inBulletedList = false;
-  let inNumberedList = false;
-
-  // Helper to close any open list
-  const closeOpenLists = () => {
-    if (inBulletedList) {
-      html += '</ul>\n';
-      inBulletedList = false;
-    }
-    if (inNumberedList) {
-      html += '</ol>\n';
-      inNumberedList = false;
-    }
-  };
-
-  const blockList = blocks.results as any[];
-  
-  // Generate Table of Contents if we have sections
-  if (tocItems.length > 0) {
-    html += `<div style="background:#f8f5fa;border-radius:8px;padding:16px 20px;margin-bottom:24px;">\n`;
-    html += `<p style="font-weight:600;color:#503666;margin:0 0 12px 0;font-size:14px;">📋 In This Issue</p>\n`;
-    html += `<ul style="margin:0;padding-left:20px;list-style:none;">\n`;
-    tocItems.forEach((item, idx) => {
-      html += `<li style="margin:6px 0;color:#8b6b9e;font-size:14px;">${idx + 1}. ${item.text}</li>\n`;
-    });
-    html += `</ul>\n</div>\n`;
-  }
-  
-  for (let i = 0; i < blockList.length; i++) {
-    const b = blockList[i];
-    const type = b.type;
-    const nextBlock = blockList[i + 1];
-
-    // Skip collateral checklist and review questions sections
-    if (type === 'heading_2') {
-      const headingText = b.heading_2?.rich_text?.[0]?.plain_text || '';
-      if (headingText === 'Collateral Checklist' || headingText === 'Review Questions') {
-        closeOpenLists();
-        break; // Stop processing after these sections
-      }
-    }
-
-    // Close lists if we hit a non-list item
-    if (type !== 'bulleted_list_item' && type !== 'numbered_list_item') {
-      closeOpenLists();
-    }
-
-    switch (type) {
-      case 'heading_1':
-        html += `<h1>${getRichText(b.heading_1?.rich_text)}</h1>\n`;
-        break;
-      case 'heading_2':
-        // Add divider before h2 (except first one) for section separation
-        if (html.includes('<h2')) {
-          html += '<hr style="border:none;border-top:2px solid #FE8383;margin:32px 0;">\n';
-        }
-        html += `<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
-        break;
-      case 'heading_3':
-        // Check if this looks like a subsection label (ends with colon)
-        const h3Text = getRichText(b.heading_3?.rich_text);
-        if (h3Text.endsWith(':')) {
-          // Render as h4 (uppercase subsection label)
-          html += `<h4>${h3Text}</h4>\n`;
-        } else {
-          html += `<h3>${h3Text}</h3>\n`;
-        }
-        break;
-      case 'paragraph':
-        const paraText = getRichText(b.paragraph?.rich_text);
-        if (paraText) html += `<p>${paraText}</p>\n`;
-        break;
-      case 'bulleted_list_item':
-        // Open <ul> if not already in a bulleted list
-        if (!inBulletedList) {
-          if (inNumberedList) {
-            html += '</ol>\n';
-            inNumberedList = false;
-          }
-          html += '<ul>\n';
-          inBulletedList = true;
-        }
-        html += `  <li>${getRichText(b.bulleted_list_item?.rich_text)}</li>\n`;
-        break;
-      case 'numbered_list_item':
-        // Open <ol> if not already in a numbered list
-        if (!inNumberedList) {
-          if (inBulletedList) {
-            html += '</ul>\n';
-            inBulletedList = false;
-          }
-          html += '<ol>\n';
-          inNumberedList = true;
-        }
-        html += `  <li>${getRichText(b.numbered_list_item?.rich_text)}</li>\n`;
-        break;
-      case 'quote':
-        html += `<blockquote>${getRichText(b.quote?.rich_text)}</blockquote>\n`;
-        break;
-      case 'divider':
-        html += '<hr>\n';
-        break;
-      case 'callout':
-        html += `<div style="background:#f8f5fa;padding:16px 20px;border-radius:8px;margin:16px 0;border-left:4px solid #503666;">${getRichText(b.callout?.rich_text)}</div>\n`;
-        break;
-      case 'image':
-        // Handle images and GIFs from Notion
-        console.log(`   🖼️  Found image block, processing...`);
-        let imageUrl = b.image?.file?.url || b.image?.external?.url;
-        const imageCaption = b.image?.caption?.[0]?.plain_text || '';
-        console.log(`   🖼️  Image URL: ${imageUrl?.substring(0, 80)}...`);
-        
-        if (imageUrl) {
-          // Upload to Supabase for permanent URL
-          console.log(`   📤 Attempting Supabase upload...`);
-          const permanentUrl = await uploadImageToSupabase(imageUrl, pageId);
-          if (permanentUrl) {
-            imageUrl = permanentUrl;
-          }
-          
-          // Check if next block contains a video link
-          let videoLink = '';
-          let skipNext = false;
-          
-          if (nextBlock?.type === 'paragraph') {
-            const richText = nextBlock.paragraph?.rich_text || [];
-            const nextContent = richText.map((t: any) => t.plain_text || '').join('');
-            const nextHref = richText[0]?.href || '';
-            
-            // Check if it's a video link
-            const checkUrl = nextHref || nextContent;
-            const isVideo = checkUrl && (
-              checkUrl.includes('loom.com') || 
-              checkUrl.includes('screen.studio') || 
-              checkUrl.includes('youtube.com') || 
-              checkUrl.includes('youtu.be') ||
-              checkUrl.includes('vimeo.com') ||
-              checkUrl.includes('screencast')
-            );
-            
-            if (isVideo) {
-              videoLink = nextHref || nextContent;
-              skipNext = true;
-              console.log(`   🎬 Detected video link: ${videoLink}`);
-            }
-          }
-          
-          if (videoLink) {
-            // Wrap image in link for mobile users
-            html += `<a href="${videoLink}" target="_blank" style="display:block;text-decoration:none;">`;
-            html += `<img src="${imageUrl}" alt="${imageCaption}" style="max-width:100%;border-radius:8px;margin:16px 0;">`;
-            html += `</a>\n`;
-            html += `<p style="font-size:12px;color:#8b6b9e;margin:4px 0 16px 0;font-style:italic;">📱 Tap image to view video</p>\n`;
-            if (skipNext) i++; // Skip the link paragraph
-          } else {
-            html += `<img src="${imageUrl}" alt="${imageCaption}" style="max-width:100%;border-radius:8px;margin:16px 0;">\n`;
-            if (imageCaption) {
-              html += `<p style="text-align:center;font-size:14px;color:#666;margin-top:8px;">${imageCaption}</p>\n`;
-            }
-          }
-        }
-        break;
-      case 'video':
-        // Handle video embeds
-        const videoUrl = b.video?.file?.url || b.video?.external?.url;
-        if (videoUrl) {
-          html += `<p><a href="${videoUrl}" style="color:#503666;">📹 Watch Video</a></p>\n`;
-        }
-        break;
-      case 'embed':
-        // Handle embeds (GIFs from external sources like Giphy)
-        const embedUrl = b.embed?.url;
-        if (embedUrl) {
-          // Check if it's a GIF or image
-          if (embedUrl.includes('.gif') || embedUrl.includes('giphy') || embedUrl.includes('.png') || embedUrl.includes('.jpg')) {
-            html += `<img src="${embedUrl}" alt="Embedded content" style="max-width:100%;border-radius:8px;margin:16px 0;">\n`;
-          } else {
-            html += `<p><a href="${embedUrl}" style="color:#503666;">🔗 View Content</a></p>\n`;
-          }
-        }
-        break;
-    }
-  }
-
-  // Close any remaining open lists
-  closeOpenLists();
-
-  return { title, issueDate, highlights, contentHtml: html, collateralHtml };
-}
-
-/**
- * Extract rich text with formatting
- */
-function getRichText(richText: any[]): string {
-  if (!richText) return '';
-  return richText.map((t: any) => {
-    let text = t.plain_text || '';
-    
-    // Underline stays as underline with coral color
-    if (t.annotations?.underline) {
-      text = `<span style="text-decoration:underline;text-decoration-color:#FE8383;">${text}</span>`;
-    }
-    
-    if (t.annotations?.bold) text = `<strong>${text}</strong>`;
-    if (t.annotations?.italic) text = `<em>${text}</em>`;
-    if (t.annotations?.code) text = `<code>${text}</code>`;
-    if (t.href) text = `<a href="${t.href}">${text}</a>`;
-    return text;
-  }).join('');
+  return { title, issueDate, highlights, contentHtml, collateralHtml };
 }
 
 const CONTACTS_DB_ID = process.env.NOTION_CONTACTS_DB_ID || '2fe09b01-2a5f-8092-b909-d7a91c8e9abc';

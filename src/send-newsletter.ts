@@ -2,6 +2,7 @@ import { Client } from '@notionhq/client';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { generateContentHtml, getRichText, formatHighlights } from './html-generator.js';
 
 // Load .env from project root manually (only if exists - for local dev)
 const __filename = fileURLToPath(import.meta.url);
@@ -61,8 +62,9 @@ async function getReadyNewsletters(): Promise<NewsletterToSend[]> {
   for (const page of response.results) {
     const p = page as any;
 
-    // Get page content
-    const content = await getPageContent(p.id);
+    // Get page content using shared HTML generator
+    const blocks = await notion.blocks.children.list({ block_id: p.id, page_size: 100 });
+    const content = await generateContentHtml(blocks.results as any[]);
 
     newsletters.push({
       id: p.id,
@@ -81,247 +83,6 @@ async function getReadyNewsletters(): Promise<NewsletterToSend[]> {
   return newsletters;
 }
 
-/**
- * Get the content of a newsletter page as HTML
- */
-async function getPageContent(pageId: string): Promise<string> {
-  const blocks = await notion.blocks.children.list({
-    block_id: pageId,
-    page_size: 100,
-  });
-
-  let html = '';
-  const blockList = blocks.results as any[];
-
-  for (let i = 0; i < blockList.length; i++) {
-    const b = blockList[i];
-    const type = b.type;
-    
-    // Look ahead for image + link pattern (for mobile video fallback)
-    const nextBlock = blockList[i + 1];
-    
-    // Debug: log ALL block types to understand structure
-    console.log(`📦 Block ${i}: type=${type}`);
-    if (type === 'paragraph') {
-      const rt = b.paragraph?.rich_text || [];
-      console.log(`   Paragraph has ${rt.length} rich_text items`);
-      rt.forEach((t: any, idx: number) => {
-        console.log(`   [${idx}] text="${t.plain_text?.substring(0, 50)}" href="${t.href || 'none'}"`);
-      });
-    }
-    if (type === 'image') {
-      console.log(`   Image URL: ${b.image?.file?.url || b.image?.external?.url || 'none'}`);
-      if (nextBlock) {
-        console.log(`   Next block: ${nextBlock.type}`);
-      }
-    }
-
-    switch (type) {
-      case 'heading_1':
-        html += `<h1>${getRichText(b.heading_1?.rich_text)}</h1>\n`;
-        break;
-      case 'heading_2':
-        // Coral divider before each major section
-        const dividerStyle = `
-          height: 3px;
-          background: linear-gradient(90deg, #FE8383 0%, #FFB8B8 50%, transparent 100%);
-          border: none;
-          margin: 36px 0 24px 0;
-          border-radius: 2px;
-        `.replace(/\s+/g, ' ').trim();
-        html += `<hr style="${dividerStyle}">\n`;
-        
-        const h2Style = `
-          font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
-          color: #503666;
-          margin: 0 0 16px 0;
-          font-size: 22px;
-          font-weight: 600;
-          border-bottom: 3px solid #503666;
-          padding-bottom: 12px;
-        `.replace(/\s+/g, ' ').trim();
-        html += `<h2 style="${h2Style}">${getRichText(b.heading_2?.rich_text)}</h2>\n`;
-        break;
-      case 'heading_3':
-        const h3Text = getRichText(b.heading_3?.rich_text);
-        const plainText = getPlainText(b.heading_3?.rich_text);
-        // Subsection labels (end with ":") → render as h4 pill with inline styles
-        // Feature titles (typically have emojis or no colon) → render as h3
-        if (plainText.trim().endsWith(':')) {
-          // Inline styles for email compatibility (email clients strip <style> tags)
-          const h4Style = `
-            font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
-            color: #503666;
-            font-size: 11px;
-            font-weight: 700;
-            margin: 24px 0 12px 0;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            display: inline-block;
-            background: #f0ebf4;
-            padding: 8px 14px;
-            border-radius: 4px;
-            border-left: 3px solid #503666;
-          `.replace(/\s+/g, ' ').trim();
-          html += `<h4 style="${h4Style}">${h3Text}</h4>\n`;
-        } else {
-          // Feature titles (h3) with inline styles
-          const h3Style = `
-            font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
-            color: #503666;
-            margin: 28px 0 14px 0;
-            font-size: 19px;
-            font-weight: 600;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0ebf4;
-          `.replace(/\s+/g, ' ').trim();
-          html += `<h3 style="${h3Style}">${h3Text}</h3>\n`;
-        }
-        break;
-      case 'paragraph':
-        const text = getRichText(b.paragraph?.rich_text);
-        if (text) html += `<p>${text}</p>\n`;
-        break;
-      case 'bulleted_list_item':
-        html += `<li>${getRichText(b.bulleted_list_item?.rich_text)}</li>\n`;
-        break;
-      case 'numbered_list_item':
-        html += `<li>${getRichText(b.numbered_list_item?.rich_text)}</li>\n`;
-        break;
-      case 'quote':
-        const quoteStyle = `
-          border-left: 5px solid #503666;
-          margin: 24px 0;
-          padding: 20px 24px;
-          background: linear-gradient(135deg, #faf8fb 0%, #f5f0f8 100%);
-          font-style: italic;
-          border-radius: 0 8px 8px 0;
-        `.replace(/\s+/g, ' ').trim();
-        html += `<blockquote style="${quoteStyle}">${getRichText(b.quote?.rich_text)}</blockquote>\n`;
-        break;
-      case 'divider':
-        const hrStyle = `
-          border: none;
-          height: 2px;
-          background: linear-gradient(90deg, #503666 0%, #8b6b9e 30%, #e8e0ed 70%, transparent 100%);
-          margin: 36px 0;
-          border-radius: 2px;
-        `.replace(/\s+/g, ' ').trim();
-        html += `<hr style="${hrStyle}">\n`;
-        break;
-      case 'callout':
-        html += `<div style="background:#f5f5f5;padding:12px;border-radius:4px;margin:16px 0;">${getRichText(b.callout?.rich_text)}</div>\n`;
-        break;
-      case 'image':
-        const imageUrl = b.image?.file?.url || b.image?.external?.url || '';
-        const imageCaption = b.image?.caption?.[0]?.plain_text || '';
-        
-        if (imageUrl) {
-          // Check if next block contains a video link (paragraph or bookmark)
-          let videoLink = '';
-          let skipNext = false;
-          
-          if (nextBlock) {
-            // Get all text/links from the next block
-            let nextContent = '';
-            let nextHref = '';
-            
-            if (nextBlock.type === 'paragraph') {
-              const richText = nextBlock.paragraph?.rich_text || [];
-              nextContent = richText.map((t: any) => t.plain_text || '').join('');
-              nextHref = richText[0]?.href || '';
-            } else if (nextBlock.type === 'bookmark') {
-              nextContent = nextBlock.bookmark?.url || '';
-              nextHref = nextContent;
-            }
-            
-            // Check if it's a video link (any URL with video platforms)
-            const checkUrl = nextHref || nextContent;
-            const isVideo = checkUrl && (
-              checkUrl.includes('loom.com') || 
-              checkUrl.includes('screen.studio') || 
-              checkUrl.includes('youtube.com') || 
-              checkUrl.includes('youtu.be') ||
-              checkUrl.includes('vimeo.com') ||
-              checkUrl.includes('screencast')
-            );
-            
-            if (isVideo) {
-              videoLink = nextHref || nextContent;
-              skipNext = true;
-            }
-          }
-          
-          const imgStyle = `
-            max-width: 100%;
-            border-radius: 8px;
-            display: block;
-            margin: 16px 0;
-          `.replace(/\s+/g, ' ').trim();
-          
-          if (videoLink) {
-            // Wrap image in link for mobile users
-            html += `<a href="${videoLink}" target="_blank" style="display:block;text-decoration:none;">`;
-            html += `<img src="${imageUrl}" alt="${imageCaption}" style="${imgStyle}">`;
-            html += `</a>\n`;
-            // Add discrete mobile message
-            html += `<p style="font-size:12px;color:#8b6b9e;margin:4px 0 16px 0;font-style:italic;">📱 Tap image to view video</p>\n`;
-            if (skipNext) i++; // Skip the link block
-          } else {
-            html += `<img src="${imageUrl}" alt="${imageCaption}" style="${imgStyle}">\n`;
-          }
-        }
-        break;
-    }
-  }
-
-  return html;
-}
-
-/**
- * Extract plain text from Notion rich text array (no HTML formatting)
- */
-function getPlainText(richText: any[]): string {
-  if (!richText) return '';
-  return richText.map((t: any) => t.plain_text || '').join('');
-}
-
-/**
- * Extract rich text from Notion rich text array with HTML formatting
- */
-function getRichText(richText: any[]): string {
-  if (!richText) return '';
-  return richText.map((t: any) => {
-    let text = t.plain_text || '';
-    
-    // Underline becomes coral highlight - process FIRST so other formatting wraps it
-    if (t.annotations?.underline) {
-      text = `<span style="background-color:#FE8383;color:#ffffff;padding:3px 6px;font-weight:bold;text-decoration:none;border-radius:3px;">${text}</span>`;
-    }
-    
-    if (t.annotations?.bold) text = `<strong>${text}</strong>`;
-    if (t.annotations?.italic) text = `<em>${text}</em>`;
-    if (t.annotations?.code) text = `<code>${text}</code>`;
-    if (t.href) text = `<a href="${t.href}">${text}</a>`;
-    return text;
-  }).join('');
-}
-
-/**
- * Format highlights for visual impact
- * - Converts line breaks to <br> tags
- * - Converts bold text to coral color
- */
-function formatHighlights(html: string): string {
-  return html
-    // Convert newlines to <br> tags
-    .replace(/\n/g, '<br>')
-    // Convert bold to coral colored text
-    .replace(
-      /<strong>([^<]+)<\/strong>/g,
-      '<strong style="color:#FE8383;font-weight:700;">$1</strong>'
-    );
-}
 
 /**
  * Get email recipients
@@ -501,8 +262,9 @@ async function sendSingleNewsletter(pageId: string): Promise<{
       return { success: false, sent: 0, failed: 0, error: `Status is "${status}", expected "Ready"` };
     }
 
-    // Get content
-    const content = await getPageContent(pageId);
+    // Get content using shared HTML generator
+    const blocks = await notion.blocks.children.list({ block_id: pageId, page_size: 100 });
+    const content = await generateContentHtml(blocks.results as any[]);
 
     const newsletter: NewsletterToSend = {
       id: pageId,
