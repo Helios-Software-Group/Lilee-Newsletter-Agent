@@ -12,7 +12,7 @@ import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const PROMPTS_DIR = join(__dirname, '..', 'prompts');
+const PROMPTS_DIR = join(__dirname, '..', '..', 'prompts');
 
 export function loadPrompt(
   name: string,

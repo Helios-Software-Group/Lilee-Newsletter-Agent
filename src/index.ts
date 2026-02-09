@@ -8,27 +8,7 @@
  * 4. (Separate trigger) Send approved newsletters via Loops
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// Load .env from project root manually (only if exists - for local dev)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, '..', '.env');
-
-if (existsSync(envPath)) {
-  const envContent = readFileSync(envPath, 'utf-8');
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...valueParts] = trimmed.split('=');
-      if (key && valueParts.length > 0) {
-        process.env[key] = valueParts.join('=');
-      }
-    }
-  }
-}
+import './lib/env.js';
 
 async function main() {
   const command = process.argv[2] || 'weekly';
@@ -102,21 +82,21 @@ async function runWeeklyWorkflow() {
     console.log('   Running auto-categorization...\n');
 
     // Import and run categorization
-    await import('./categorize-meetings.js');
+    await import('./meetings/categorize.js');
     console.log('   ✅ Categorization complete\n');
   }
 
   console.log('\n📰 PHASE 2: Drafting newsletter...\n');
 
   // Import and run draft
-  const { draftNewsletter } = await import('./draft-newsletter.js');
+  const { draftNewsletter } = await import('./newsletter/draft.js');
   const draftResult = await draftNewsletter();
 
   if (draftResult && draftResult.pageId) {
     console.log('\n✏️  PHASE 3: AI Review & Edit...\n');
 
     // Import and run review
-    const { reviewAndEditNewsletter } = await import('./review-newsletter.js');
+    const { reviewAndEditNewsletter } = await import('./newsletter/review.js');
     const reviewResult = await reviewAndEditNewsletter(draftResult.pageId);
 
     if (reviewResult.success) {
@@ -133,7 +113,7 @@ async function runWeeklyWorkflow() {
 
     console.log('\n📤 PHASE 4: Sending Slack notification...\n');
 
-    const { notifySlack } = await import('./notify-slack.js');
+    const { notifySlack } = await import('./integrations/slack.js');
     await notifySlack(draftResult);
   }
 
@@ -153,7 +133,7 @@ Next steps:
  */
 async function runCategorize() {
   // Dynamic import
-  const categorizeModule = await import('./categorize-meetings.js');
+  const categorizeModule = await import('./meetings/categorize.js');
   // The module runs on import
 }
 
@@ -161,7 +141,7 @@ async function runCategorize() {
  * Send ready newsletters
  */
 async function runSend() {
-  const { sendNewsletters } = await import('./send-newsletter.js');
+  const { sendNewsletters } = await import('./newsletter/send.js');
   await sendNewsletters();
 }
 
@@ -169,7 +149,7 @@ async function runSend() {
  * Send test Slack notification
  */
 async function runNotify() {
-  const { notifySlack } = await import('./notify-slack.js');
+  const { notifySlack } = await import('./integrations/slack.js');
   await notifySlack();
 }
 

@@ -15,7 +15,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { enrichMeeting } from '../src/agent/index.js';
+import { enrichMeeting } from '../src/meetings/enrich.js';
 
 // Simple webhook secret validation (optional)
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;

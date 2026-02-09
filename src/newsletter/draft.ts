@@ -1,28 +1,8 @@
+import '../lib/env.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@notionhq/client';
-import type { MeetingBucket } from './types/index.js';
-import { loadPrompt } from './load-prompt.js';
-import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// Load .env from project root manually (only if exists - for local dev)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, '..', '.env');
-
-if (existsSync(envPath)) {
-  const envContent = readFileSync(envPath, 'utf-8');
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...valueParts] = trimmed.split('=');
-      if (key && valueParts.length > 0) {
-        process.env[key] = valueParts.join('=');
-      }
-    }
-  }
-}
+import type { MeetingBucket } from '../lib/types.js';
+import { loadPrompt } from '../lib/load-prompt.js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -771,7 +751,7 @@ async function draftNewsletter() {
 }
 
 // Run if called directly (only when this is the main module)
-const isMainModule = process.argv[1]?.includes('draft-newsletter');
+const isMainModule = process.argv[1]?.includes('draft');
 if (isMainModule) {
   draftNewsletter().catch(console.error);
 }

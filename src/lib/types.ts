@@ -80,21 +80,3 @@ export interface LoopsEmailPayload {
     unsubscribe_link: string;
   };
 }
-
-// CRM Entry from Customer Database
-export type CRMStatus = 'Lead' | 'Discovery' | 'Qualified' | 'Proposal' | 'Negotiation' | 'In progress' | 'Closed' | 'Lost';
-
-export interface CRMEntry {
-  id: string;
-  url: string;
-  name: string;
-  company: string;
-  email?: string;
-  phone?: string;
-  status: CRMStatus;
-  priority?: string;
-  estimatedValue?: number;
-  accountOwner?: string;
-  lastContact?: string;
-  expectedClose?: string;
-}

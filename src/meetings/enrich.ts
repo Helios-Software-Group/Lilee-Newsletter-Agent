@@ -10,30 +10,8 @@
  * NO MICROSOFT AZURE REQUIRED - Uses Notion's existing AI connectors!
  */
 
+import '../lib/env.js';
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// Load .env
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, '../..', '.env');
-
-try {
-  const envContent = readFileSync(envPath, 'utf-8');
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...valueParts] = trimmed.split('=');
-      if (key && valueParts.length > 0) {
-        process.env[key] = valueParts.join('=');
-      }
-    }
-  }
-} catch {
-  // Env vars may be set externally (Vercel, etc.)
-}
 
 // Internal email domains to filter out
 const INTERNAL_DOMAINS = [
@@ -220,7 +198,7 @@ export async function handleWebhook(payload: {
 }
 
 // CLI mode - run directly
-if (process.argv[1]?.includes('agent')) {
+if (process.argv[1]?.includes('enrich')) {
   const testMeetingId = process.argv[2] || 'test-meeting-id';
   const testDate = process.argv[3] || new Date().toISOString();
   const testName = process.argv[4] || 'Test Meeting';

@@ -1,26 +1,6 @@
+import '../lib/env.js';
 import { Client } from '@notionhq/client';
-import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { generateContentHtml, getRichText, formatHighlights } from './html-generator.js';
-
-// Load .env from project root manually (only if exists - for local dev)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, '..', '.env');
-
-if (existsSync(envPath)) {
-  const envContent = readFileSync(envPath, 'utf-8');
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...valueParts] = trimmed.split('=');
-      if (key && valueParts.length > 0) {
-        process.env[key] = valueParts.join('=');
-      }
-    }
-  }
-}
+import { generateContentHtml, getRichText, formatHighlights } from '../lib/html-generator.js';
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 

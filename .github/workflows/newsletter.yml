@@ -78,4 +78,4 @@ jobs:
           NOTION_NEWSLETTER_DB_ID: ${{ secrets.NOTION_NEWSLETTER_DB_ID }}
           LOOPS_API_KEY: ${{ secrets.LOOPS_API_KEY }}
           LOOPS_TRANSACTIONAL_ID: ${{ secrets.LOOPS_TRANSACTIONAL_ID }}
-        run: npx tsx src/send-newsletter.ts
+        run: npx tsx src/newsletter/send.ts

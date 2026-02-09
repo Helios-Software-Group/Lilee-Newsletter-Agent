@@ -19,7 +19,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Client } from '@notionhq/client';
 import { createClient } from '@supabase/supabase-js';
-import { generateContentHtml, getRichText, formatHighlights } from '../src/html-generator.js';
+import { generateContentHtml, getRichText, formatHighlights } from '../src/lib/html-generator.js';
 
 const WEBHOOK_SECRET = process.env.NOTION_WEBHOOK_SECRET;
 const SUPABASE_URL = process.env.SUPABASE_URL;

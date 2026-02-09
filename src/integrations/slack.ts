@@ -1,24 +1,4 @@
-import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// Load .env from project root manually (only if exists - for local dev)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, '..', '.env');
-
-if (existsSync(envPath)) {
-  const envContent = readFileSync(envPath, 'utf-8');
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...valueParts] = trimmed.split('=');
-      if (key && valueParts.length > 0) {
-        process.env[key] = valueParts.join('=');
-      }
-    }
-  }
-}
+import '../lib/env.js';
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL!;
 
@@ -171,7 +151,7 @@ async function notifySlack(payload?: SlackNotificationPayload) {
 }
 
 // Run if called directly
-if (process.argv[1]?.includes('notify-slack')) {
+if (process.argv[1]?.includes('slack')) {
   notifySlack().catch(console.error);
 }
 

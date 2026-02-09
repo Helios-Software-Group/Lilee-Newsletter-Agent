@@ -9,18 +9,14 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "weekly": "tsx src/index.ts weekly",
-    "sync-meetings": "tsx src/sync-meetings.ts",
-    "categorize": "tsx src/categorize-meetings.ts",
-    "draft": "tsx src/draft-newsletter.ts",
-    "send": "tsx src/send-newsletter.ts",
-    "notify": "tsx src/notify-slack.ts",
-    "crm-link": "tsx src/crm-linker.ts"
+    "categorize": "tsx src/meetings/categorize.ts",
+    "draft": "tsx src/newsletter/draft.ts",
+    "send": "tsx src/newsletter/send.ts",
+    "notify": "tsx src/integrations/slack.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.30",
     "@anthropic-ai/sdk": "^0.39.0",
-    "@azure/msal-node": "^5.0.3",
-    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@notionhq/client": "^2.2.15",
     "@slack/web-api": "^7.8.0",
     "@supabase/supabase-js": "^2.95.2",

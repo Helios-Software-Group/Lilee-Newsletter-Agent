@@ -43,9 +43,6 @@ npm run weekly               # Full pipeline: draft → review → notify
 | `npm run send` | Send all newsletters with Status = "Ready" |
 | `npm run categorize` | AI-categorize uncategorized meetings |
 | `npm run notify` | Send test Slack notification |
-| `npm run sync-meetings` | Sync meetings from Microsoft Teams/Calendar |
-| `npm run crm-link` | Link meetings to CRM entries |
-
 ## Project Structure
 
 ```
@@ -55,22 +52,20 @@ npm run weekly               # Full pipeline: draft → review → notify
 │
 ├── src/
 │   ├── index.ts                  # Main orchestrator (weekly/draft/send routing)
-│   ├── draft-newsletter.ts       # Generate draft from meetings + tasks
-│   ├── review-newsletter.ts      # AI review & edit
-│   ├── send-newsletter.ts        # CLI email sender via Loops
-│   ├── html-generator.ts         # Shared Notion → HTML converter
-│   ├── load-prompt.ts            # Prompt template loader
-│   ├── notify-slack.ts           # Slack webhook notifications
-│   ├── categorize-meetings.ts    # AI meeting categorization
-│   ├── sync-meetings.ts          # Microsoft Teams/Calendar sync
-│   ├── crm-linker.ts             # Link meetings to CRM contacts
-│   ├── agent/
-│   │   └── index.ts              # Claude Agent SDK for meeting enrichment
-│   ├── tools/
-│   │   ├── crm.ts                # CRM tool (Notion client)
-│   │   └── graph.ts              # Microsoft Graph API client
-│   └── types/
-│       └── index.ts              # TypeScript interfaces
+│   ├── lib/                      # Shared utilities
+│   │   ├── env.ts                #   .env file loader
+│   │   ├── html-generator.ts     #   Notion → HTML converter
+│   │   ├── load-prompt.ts        #   Prompt template loader
+│   │   └── types.ts              #   TypeScript interfaces
+│   ├── newsletter/               # Newsletter pipeline
+│   │   ├── draft.ts              #   Generate draft from meetings + tasks
+│   │   ├── review.ts             #   AI review & edit
+│   │   └── send.ts               #   CLI email sender via Loops
+│   ├── meetings/                 # Meeting processing
+│   │   ├── categorize.ts         #   AI meeting categorization
+│   │   └── enrich.ts             #   Claude Agent SDK for meeting enrichment
+│   └── integrations/             # External service connectors
+│       └── slack.ts              #   Slack webhook notifications
 │
 ├── prompts/                      # AI prompt templates (editable markdown)
 │   ├── draft-newsletter.md       #   Newsletter generation prompt
@@ -105,16 +100,16 @@ The codebase separates **code** (TypeScript orchestration) from **content** (wha
 
 ### HTML Generation Pipeline
 
-Both the CLI (`src/send-newsletter.ts`) and webhook (`api/newsletter-status.ts`) use a shared HTML generator:
+Both the CLI (`src/newsletter/send.ts`) and webhook (`api/newsletter-status.ts`) use a shared HTML generator:
 
-- **`src/html-generator.ts`** converts Notion blocks into bare semantic HTML (`<h1>`, `<h2>`, `<p>`, `<ul>`, `<blockquote>`, etc.)
+- **`src/lib/html-generator.ts`** converts Notion blocks into bare semantic HTML (`<h1>`, `<h2>`, `<p>`, `<ul>`, `<blockquote>`, etc.)
 - No inline styles on content — the compiled MJML template's `<style>` block handles all styling
 - Only exception: `<img>` tags keep `style="max-width:100%"` (email clients need explicit image constraints)
 - Supports optional Supabase image upload via callback for permanent hosting
 
 ### Prompt System
 
-AI prompts live in `prompts/*.md` as editable Markdown files. The `src/load-prompt.ts` utility:
+AI prompts live in `prompts/*.md` as editable Markdown files. The `src/lib/load-prompt.ts` utility:
 - Reads the `.md` file from the `prompts/` directory
 - Strips the header (everything before `## Prompt` or `## System Prompt`)
 - Interpolates `{{variableName}}` placeholders with provided values
