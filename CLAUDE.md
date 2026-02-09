@@ -1,91 +1,172 @@
 # Lilee Newsletter Agent
 
-## Overview
+Automated newsletter pipeline that drafts, reviews, and sends weekly product updates for health plan stakeholders — powered by Claude, Notion, and Loops.
 
-Automated newsletter management system that generates, reviews, and sends weekly product updates to health plan stakeholders.
-
-## Architecture
+## How It Works
 
 ```
-TUESDAY 9 AM (GitHub Actions)
-├── Fetch Meetings + Tasks from Notion
-├── Generate Draft with Claude
-├── AI Review & Edit (payer-focused language)
-├── Add Collateral Checklist
-├── Create in Notion (Status: Draft)
-└── Slack Notification
+WEEKLY (GitHub Actions or manual)
+├── Fetch meetings + tasks from Notion (past 7 days)
+├── Generate draft with Claude (Opus 4.5)
+├── AI review & edit for payer language (Sonnet 4)
+├── Create page in Notion (Status: Draft)
+└── Slack notification with preview link
 
-HUMAN REVIEW (Notion)
-├── Review AI-edited draft
-├── Add screenshots/videos
+HUMAN REVIEW (in Notion)
+├── Edit content, add screenshots/videos
 ├── Complete collateral checklist
 └── Set Status → "Ready"
 
-AUTO-SEND (Notion Webhook → Vercel)
-├── Receive status change webhook
-├── Validate Status = "Ready"
-├── Send via Loops API
-└── Update Status → "Sent"
+AUTO-SEND (Notion webhook → Vercel → Loops)
+├── Webhook fires on status change
+├── Converts Notion blocks → semantic HTML
+├── Sends via Loops transactional email
+└── Updates Status → "Sent"
 ```
 
-## Key Commands
+## Quick Start
 
 ```bash
-npm run weekly          # Full workflow: draft + review + notify
-npm run draft           # Generate newsletter draft only
-npm run send            # Send newsletters with Status="Ready"
-npm run categorize      # Categorize uncategorized meetings
-npm run notify          # Send test Slack notification
+npm install
+cp .env.example .env        # Fill in your keys (see Setup Guide below)
+npm run weekly               # Full pipeline: draft → review → notify
 ```
 
-## Environment Variables
+## Commands
 
-```env
-# Anthropic
-ANTHROPIC_API_KEY=sk-ant-...
+| Command | What it does |
+|---------|-------------|
+| `npm run weekly` | Full workflow: draft + review + Slack notify |
+| `npm run draft` | Generate newsletter draft only |
+| `npm run send` | Send all newsletters with Status = "Ready" |
+| `npm run categorize` | AI-categorize uncategorized meetings |
+| `npm run notify` | Send test Slack notification |
+| `npm run sync-meetings` | Sync meetings from Microsoft Teams/Calendar |
+| `npm run crm-link` | Link meetings to CRM entries |
 
-# Notion
-NOTION_API_KEY=ntn_...
-NOTION_MEETINGS_DB_ID=...
-NOTION_TASKS_DB_ID=...
-NOTION_NEWSLETTER_DB_ID=...
-NOTION_WEBHOOK_SECRET=...
+## Project Structure
 
-# Slack
-SLACK_WEBHOOK_URL=https://hooks.slack.com/...
-
-# Loops (Email)
-LOOPS_API_KEY=...
-LOOPS_TRANSACTIONAL_ID=...
 ```
+├── api/                          # Vercel serverless endpoints
+│   ├── newsletter-status.ts      #   Auto-send webhook (Notion → Loops)
+│   └── webhook.ts                #   Meeting enrichment webhook
+│
+├── src/
+│   ├── index.ts                  # Main orchestrator (weekly/draft/send routing)
+│   ├── draft-newsletter.ts       # Generate draft from meetings + tasks
+│   ├── review-newsletter.ts      # AI review for payer language
+│   ├── send-newsletter.ts        # CLI email sender via Loops
+│   ├── html-generator.ts         # Shared Notion → HTML converter
+│   ├── load-prompt.ts            # Prompt template loader
+│   ├── notify-slack.ts           # Slack webhook notifications
+│   ├── categorize-meetings.ts    # AI meeting categorization
+│   ├── sync-meetings.ts          # Microsoft Teams/Calendar sync
+│   ├── crm-linker.ts             # Link meetings to CRM contacts
+│   ├── delete-empty-entries.ts   # Utility: clean empty DB entries
+│   ├── agent/
+│   │   └── index.ts              # Claude Agent SDK for meeting enrichment
+│   ├── tools/
+│   │   ├── crm.ts                # CRM tool (Notion client)
+│   │   ├── graph.ts              # Microsoft Graph API client
+│   │   └── notion.ts             # Notion API wrapper
+│   └── types/
+│       └── index.ts              # TypeScript interfaces
+│
+├── prompts/                      # AI prompt templates (editable markdown)
+│   ├── draft-newsletter.md       #   Newsletter generation prompt
+│   ├── review-newsletter.md      #   Review/editing system prompt
+│   └── categorize-meeting.md     #   Meeting categorization prompt
+│
+├── email-template/
+│   ├── index.mjml                # MJML source (edit this)
+│   ├── index.html                # Compiled HTML (upload to Loops)
+│   └── img/                      # Logo and icon assets
+│
+├── scripts/
+│   └── create-subscribers-db.ts  # One-time: create subscribers DB in Notion
+│
+├── .github/workflows/
+│   └── newsletter.yml            # GitHub Actions (manual trigger)
+│
+└── .env.example                  # All required environment variables
+```
+
+## Architecture Details
+
+### HTML Generation Pipeline
+
+Both the CLI (`src/send-newsletter.ts`) and webhook (`api/newsletter-status.ts`) use a shared HTML generator:
+
+- **`src/html-generator.ts`** converts Notion blocks into bare semantic HTML (`<h1>`, `<h2>`, `<p>`, `<ul>`, `<blockquote>`, etc.)
+- No inline styles on content — the compiled MJML template's `<style>` block handles all styling
+- Only exception: `<img>` tags keep `style="max-width:100%"` (email clients need explicit image constraints)
+- Supports optional Supabase image upload via callback for permanent hosting
+
+### Prompt System
+
+AI prompts live in `prompts/*.md` as editable Markdown files. The `src/load-prompt.ts` utility:
+- Reads the `.md` file from the `prompts/` directory
+- Strips the header (everything before `## Prompt` or `## System Prompt`)
+- Interpolates `{{variableName}}` placeholders with provided values
+
+To edit a prompt, just modify the markdown file — no code changes needed.
+
+### Webhook Endpoints
+
+**POST `/api/newsletter-status`** — Auto-send trigger
+- Called by Notion automation when Status changes to "Ready"
+- Header: `x-webhook-secret: [NOTION_WEBHOOK_SECRET]`
+- Body: `{ "pageId": "...", "status": "Ready" }`
+
+**POST `/api/webhook`** — Meeting enrichment
+- Called by Notion when a new meeting is created
 
 ## Notion Database Schema
 
 ### Newsletter DB
-- `Issue` (title) - Newsletter title
-- `Issue date` (date) - Publication date
-- `Status` (status) - Draft | Ready | Sent
-- `Audience` (select) - Customers | Internal
-- `Highlights` (rich_text) - Brief summary
-- `Primary customer` (rich_text) - Featured customer
+| Property | Type | Values |
+|----------|------|--------|
+| Issue | title | Newsletter title |
+| Issue date | date | Publication date |
+| Status | status | Draft / Ready / Sent |
+| Audience | select | Customers / Internal |
+| Highlights | rich_text | Brief summary for email preview |
+| Primary customer | rich_text | Featured customer name |
 
 ### Meetings DB
-- `Name` (title) - Meeting name
-- `Date` (date) - Meeting date
-- `Bucket` (select) - Customer | Pipeline | Internal
-- `Summary` (rich_text) - AI-generated summary
-- `Topics` (multi_select) - Discussion topics
-- `Action Items` (rich_text) - Action items
+| Property | Type | Values |
+|----------|------|--------|
+| Name | title | Meeting name |
+| Date | date | Meeting date |
+| Bucket | select | Customer / Pipeline / Internal |
+| Summary | rich_text | AI-generated summary |
+| Company | rich_text | Associated company |
+| Topics | multi_select | Product Demo, Pricing, Technical, Strategy, Hiring, Partnership, Support, Onboarding, Feedback |
+| Action Items | rich_text | Action items from meeting |
+
+### Tasks DB
+| Property | Type | Notes |
+|----------|------|-------|
+| Name | title | Task description |
+| Status | status | Must include "Done" or "Complete" |
+| Sprint | relation | Links to Sprints DB |
+
+### Subscribers DB
+| Property | Type | Notes |
+|----------|------|-------|
+| Email | email | Recipient address |
+| First Name | rich_text | For personalization |
+| Subscribed | checkbox | Filter for active subscribers |
 
 ## Content Guidelines
 
 ### Target Audience
-- VPs of Operations at health plans
+- VPs of Operations at health plans, TPAs, ACOs
 - CMOs / Medical Directors
 - UM Directors
 - Compliance Officers
 
-### Payer Language (REQUIRED)
+### Payer Language (Required)
 
 | Avoid | Use Instead |
 |-------|-------------|
@@ -97,135 +178,28 @@ LOOPS_TRANSACTIONAL_ID=...
 | "decision support" | "reviewer confidence" |
 
 ### Compliance References
-When relevant, cite specific regulations:
-- **CMS-0057-F** - Prior auth interoperability rule
-- **NCQA** - Accreditation standards for UM
-- **URAC** - Health utilization management standards
-- **CMS 72hr/7-day** - Prior auth timeline requirements
+- **CMS-0057-F** — Prior auth interoperability rule
+- **NCQA** — Accreditation standards for UM
+- **URAC** — Health utilization management standards
+- **CMS 72hr/7-day** — Prior auth timeline requirements
 
 ### Impact Quantification
-Always quantify operational impact:
+Always quantify when possible:
 - "Reduces TAT by 40%"
-- "Saves 5 min per auth × 50 auths/day = 4+ hours"
+- "Saves 5 min per auth x 50 auths/day = 4+ hours"
 - "Achieves 95% first-pass accuracy"
 
-## File Structure
+## Environment Variables
 
-```
-Lilee-Newsletter-Repo/
-├── api/
-│   ├── webhook.ts              # Meeting enrichment webhook
-│   └── newsletter-status.ts    # Status change webhook (auto-send)
-├── src/
-│   ├── index.ts                # Main orchestrator
-│   ├── draft-newsletter.ts     # Draft generation
-│   ├── review-newsletter.ts    # AI review & edit
-│   ├── send-newsletter.ts      # Email sending via Loops
-│   ├── notify-slack.ts         # Slack notifications
-│   ├── categorize-meetings.ts  # Meeting categorization
-│   └── types/
-│       └── index.ts            # TypeScript interfaces
-├── .github/workflows/
-│   └── newsletter.yml          # Scheduled Tuesday runs
-└── CLAUDE.md                   # This file
-```
+See `.env.example` for all required variables. Key groups:
 
-## Webhook Endpoints
+| Group | Variables | Purpose |
+|-------|-----------|---------|
+| Anthropic | `ANTHROPIC_API_KEY` | Claude API for drafting, review, categorization |
+| Notion | `NOTION_API_KEY`, `*_DB_ID` | Database access for meetings, tasks, newsletters, subscribers |
+| Loops | `LOOPS_API_KEY`, `LOOPS_TRANSACTIONAL_ID` | Transactional email sending |
+| Slack | `SLACK_WEBHOOK_URL` | Draft notifications (optional) |
+| Supabase | `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET` | Permanent image hosting (optional) |
+| Webhook | `NOTION_WEBHOOK_SECRET` | Auto-send authentication (optional) |
 
-### POST /api/webhook
-Meeting enrichment - called by Notion when new meeting created.
-
-### POST /api/newsletter-status
-Auto-send trigger - called by Notion when Status changes to "Ready".
-
-**Headers:** `x-webhook-secret: [NOTION_WEBHOOK_SECRET]`
-
-**Body:** `{ "pageId": "...", "status": "Ready" }`
-
-## Troubleshooting
-
-### No meetings found
-- Verify `NOTION_MEETINGS_DB_ID` is correct
-- Check meetings have dates within past 7 days
-- Ensure meetings have `Bucket` property set
-
-### Loops email not sending
-- Verify `LOOPS_API_KEY` is valid
-- Check `LOOPS_TRANSACTIONAL_ID` matches template
-- Ensure contacts have `newsletter: true` property
-
-### Webhook not triggering
-- Verify Notion automation is enabled
-- Check `NOTION_WEBHOOK_SECRET` matches
-- Review Vercel function logs at vercel.com
-
-### AI review not improving content
-- Check Anthropic API key is valid
-- Review Claude response in logs
-- Verify draft content was fetched correctly
-
-## Deployment
-
-### GitHub Actions
-- Runs `weekly` command every Tuesday at 9 AM EST (14:00 UTC)
-- Manual trigger available via workflow_dispatch
-- Secrets configured in repository settings
-
-### Vercel
-- Webhook endpoints deployed automatically
-- Function timeout: 300s (5 min)
-- Environment variables in Vercel dashboard
-
-### Notion Automation Setup
-
-**Step-by-step to configure auto-send on status change:**
-
-1. Open the Newsletter database in Notion
-2. Click the "..." menu in the top-right corner
-3. Select "Automations"
-4. Click "+ New automation"
-5. Configure the trigger:
-   - "When" → "Status property changes"
-   - "to" → "Ready"
-6. Configure the action:
-   - "Then" → "Send webhook"
-   - URL: `https://your-vercel-app.vercel.app/api/newsletter-status`
-   - Method: POST
-   - Headers: Add `x-webhook-secret` with your `NOTION_WEBHOOK_SECRET` value
-   - Body (JSON):
-     ```json
-     {
-       "pageId": "{{page.id}}",
-       "status": "{{page.Status}}"
-     }
-     ```
-7. Save the automation
-
-**Testing the webhook:**
-```bash
-curl -X POST https://your-vercel-app.vercel.app/api/newsletter-status \
-  -H "Content-Type: application/json" \
-  -H "x-webhook-secret: your-secret" \
-  -d '{"pageId": "your-test-page-id", "status": "Ready"}'
-```
-
-### Loops Email Template Setup
-
-**Create a transactional email template in Loops:**
-
-1. Log in to Loops dashboard
-2. Go to "Transactional" → "Create template"
-3. Name it `lilee-product-update`
-4. Set up the template with these variables:
-   - `{{first_name}}` - Recipient's first name
-   - `{{issue_title}}` - Newsletter title
-   - `{{issue_date}}` - Publication date
-   - `{{highlights}}` - Brief summary
-   - `{{content_html}}` - Full HTML content
-5. Design with Lilee branding (logo, colors)
-6. Copy the transactional ID to `LOOPS_TRANSACTIONAL_ID`
-
-**Contact properties required:**
-- `email` (string) - Recipient email
-- `firstName` (string) - For personalization
-- `newsletter` or `subscribed` (boolean) - Filter recipients
+For full setup instructions, see **[GUIDE.md](GUIDE.md)**.

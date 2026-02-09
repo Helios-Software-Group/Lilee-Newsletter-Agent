@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@notionhq/client';
 import type { MeetingBucket } from './types/index.js';
+import { loadPrompt } from './load-prompt.js';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -257,115 +258,30 @@ async function generateNewsletterDraft(
     max_tokens: 4000,
     messages: [{
       role: 'user',
-      content: `You are drafting a weekly product newsletter for Lilee, an AI-powered healthcare workflow platform.
-
-**Audience:** VPs of Operations, CMOs, UM Directors, Compliance Officers at health plans, TPAs, and ACOs.
-
-**What they care about:**
-- CMS compliance (prior auth timelines, interoperability)
-- Operational efficiency (TAT, SLA, staffing costs)
-- Clinical quality (consistent criteria, audit-ready docs)
-- Provider/member experience
-
----
-
-**ENGINEERING TASKS COMPLETED THIS WEEK:**
-${tasksContext}
-
----
-
-**MEETING NOTES FROM THIS WEEK:**
-${meetingsContext}
-
----
-
-**Instructions:**
-1. Generate a newsletter with 2-3 Big Features based on the completed engineering tasks and meeting discussions
-2. Focus on what was SHIPPED/COMPLETED this week (from the tasks)
-3. Use customer feedback from meetings to add context and validate the features
-4. For each feature, include:
-   - What shipped (bullets from the actual tasks completed)
-   - Why this matters for their operation (connect to CMS, TAT, staffing, care quality)
-   - Operational impact (quantify where possible)
-   - Compliance angle where relevant
-
-5. Use payer language: TAT, LCD/NCD criteria, medical necessity, audit-ready, reviewer confidence
-6. Include a Roadmap section with regulatory alignment
-7. Include Customer Feedback section with quotes from meetings
-8. ALWAYS end with a "One Ask" section that includes a CTA to book a discovery call: https://calendly.com/lilee-ai/discovery-call-lilee-ai
-   - Frame the ask around the main feature (e.g., "Want to see Ellie in action? Book a quick call with our team.")
-   - The CTA button is already in the email template, but the "One Ask" section should introduce it with context
-
-**TITLE GUIDELINES (CRITICAL):**
-- DO NOT use "Lilee Product Update — [date]" - the date is already shown separately
-- Create an ORIGINAL, compelling title that highlights the main feature or theme
-- Examples of GOOD titles:
-  - "Introducing Lilee Chat: Your Clinical Review Copilot"
-  - "Faster Determinations, Better Audit Trails"
-  - "CMS-0057-F Ready: New Interoperability Features"
-  - "From 20 Clicks to 2: Streamlined Auth Workflows"
-- The title should make readers want to open the email
-
-**Formatting Guidelines (IMPORTANT):**
-- Use ## for main section headers (e.g., "## What Shipped This Week", "## Roadmap", "## Customer Feedback", "## One Ask")
-- Use ### with emoji for feature titles (e.g., "### 🚀 Introducing Ellie: Your New Helpful Co-Pilot")
-- Use <h4> tags for subsection labels - these render as purple pill badges in email:
-  - <h4>What's Live:</h4>
-  - <h4>Why This Matters for Your Operation:</h4>
-  - <h4>Operational Impact:</h4>
-  - <h4>Compliance Angle:</h4>
-  - <h4>What's In Progress:</h4>
-- Use bullet points (-) for lists
-- **BOLD all new feature names, product names, and key terms** when first mentioned in a paragraph (e.g., "This week we're introducing **Lilee Chat**—a conversational interface...")
-- Use **bold** for metric lead-ins (e.g., "**Reduced Review TAT**: 40% faster...")
-- Add --- divider between major feature sections for visual separation
-- Use > for customer quotes in blockquotes
-
-**STATUS BADGES (use inline HTML spans):**
-For feature titles, add status indicators using these classes:
-- <span class="status-live">Live</span> - for features currently available
-- <span class="status-testing">In Testing</span> - for features in beta/testing
-- <span class="status-coming">Coming Soon</span> - for upcoming features
-
-Example: ### 🚀 Introducing Ellie <span class="status-live">Live</span>
-
-**TABLE FORMATTING (CRITICAL):**
-- DO NOT use markdown table syntax (| pipes) - it won't render in email
-- Instead, format roadmap/comparison data as styled HTML:
-<table style="width:100%;border-collapse:collapse;margin:20px 0;">
-  <tr style="background:#f0ebf4;">
-    <th style="padding:12px;text-align:left;border-bottom:2px solid #503666;">Target</th>
-    <th style="padding:12px;text-align:left;border-bottom:2px solid #503666;">Capability</th>
-    <th style="padding:12px;text-align:left;border-bottom:2px solid #503666;">Regulatory Alignment</th>
-  </tr>
-  <tr>
-    <td style="padding:12px;border-bottom:1px solid #e0e0e0;">Feb W2</td>
-    <td style="padding:12px;border-bottom:1px solid #e0e0e0;">Feature description</td>
-    <td style="padding:12px;border-bottom:1px solid #e0e0e0;">CMS requirement</td>
-  </tr>
-</table>
-
-**Response Format (JSON):**
-{
-  "title": "Creative, compelling title highlighting the main feature (NOT 'Lilee Product Update — date')",
-  "highlights": "Brief 1-2 sentence summary of key updates",
-  "primaryCustomer": "Name of primary customer mentioned, or empty string",
-  "content": "Full newsletter content in Markdown format with HTML tables",
-  "suggestedCollateral": ["List of screenshots, videos, or attachments that would enhance this newsletter"],
-  "reviewQuestions": ["Questions the team should answer before sending", "e.g., 'Should we include the TAT metrics from ACV?'"]
-}
-
-Respond with ONLY valid JSON.`
+      content: loadPrompt('draft-newsletter', { tasksContext, meetingsContext }),
     }]
   });
 
   const responseText = (message.content[0] as any).text.trim();
 
   try {
-    const jsonStr = responseText.replace(/```json\n?|\n?```/g, '').trim();
+    // Strip markdown code fences if present
+    let jsonStr = responseText.replace(/^```json\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+
+    // If the response still doesn't start with {, try to extract JSON from the text
+    if (!jsonStr.startsWith('{')) {
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}$/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0];
+      }
+    }
+
     return JSON.parse(jsonStr);
-  } catch {
+  } catch (e) {
     console.error('Failed to parse Claude response, using fallback');
+    console.error('Parse error:', (e as Error).message);
+    console.error('Response starts with:', responseText.substring(0, 200));
+    console.error('Response ends with:', responseText.substring(responseText.length - 200));
     return {
       title: 'This Week at Lilee: New Features & Updates',
       highlights: 'Weekly product updates',
@@ -398,7 +314,7 @@ async function createNewsletterInNotion(draft: {
         status: { name: 'Draft' },
       },
       Audience: {
-        select: { name: 'Customers' },
+        multi_select: [{ name: 'Customers' }],
       },
       'Issue date': {
         date: { start: today },
@@ -406,11 +322,6 @@ async function createNewsletterInNotion(draft: {
       Highlights: {
         rich_text: [{ text: { content: draft.highlights.slice(0, 2000) } }],
       },
-      ...(draft.primaryCustomer && {
-        'Primary customer': {
-          rich_text: [{ text: { content: draft.primaryCustomer } }],
-        },
-      }),
     },
   });
 
