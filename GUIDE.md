@@ -1,6 +1,6 @@
 # Setup Guide
 
-Step-by-step instructions to get the Lilee Newsletter Agent running from scratch.
+Step-by-step instructions to get the Newsletter Agent running from scratch.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ Step-by-step instructions to get the Lilee Newsletter Agent running from scratch
 
 ```bash
 git clone <repo-url>
-cd Lilee-Newsletter-Repo
+cd newsletter-agent
 npm install
 cp .env.example .env
 ```
@@ -30,7 +30,7 @@ Open `.env` and fill in each value as you complete the steps below.
 
 1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations)
 2. Click "New integration"
-3. Name it "Lilee Newsletter Agent"
+3. Name it something like "Newsletter Agent"
 4. Select your workspace
 5. Under Capabilities, enable: Read content, Update content, Insert content
 6. Copy the "Internal Integration Secret" → paste as `NOTION_API_KEY` in `.env`
@@ -78,7 +78,7 @@ Or manually create with: Email (email), First Name (rich_text), Subscribed (chec
 For **each** database:
 1. Open the database page in Notion
 2. Click the "..." menu in the top-right
-3. Click "Connections" → find and add your "Lilee Newsletter Agent" integration
+3. Click "Connections" → find and add your integration
 
 ### 2d. Copy Database IDs
 
@@ -113,7 +113,7 @@ The system uses two models:
 ### 4b. Upload the Email Template
 
 1. Go to Transactional → Create template
-2. Name it something like "Lilee Product Update"
+2. Name it something like "Product Update" (or your preferred name)
 3. In the template editor, paste the contents of `email-template/index.html`
 4. The template expects these data variables (used in the HTML):
 
@@ -242,6 +242,115 @@ You can always trigger a run manually:
 2. Click "Run workflow"
 3. Choose a command: `weekly`, `draft`, `categorize`, or `send`
 
+## Step 9: Customize for Your Company
+
+The codebase is designed to be **modular** — all company-specific content lives outside the TypeScript code. You never need to edit `.ts` files to adapt this for your company. There are three layers to customize:
+
+### 9a. AI Prompts (`prompts/`)
+
+These markdown files control what Claude writes. The included prompts are Lilee-specific (healthcare/payer language) and should be replaced with your own.
+
+**`prompts/draft-newsletter.md`** — Controls how the newsletter is generated.
+Replace:
+- The product description (line: "You are drafting a weekly product newsletter for...")
+- The audience definition (who reads it, what they care about)
+- The language/terminology section (industry-specific terms to use)
+- The CTA / "One Ask" section (your own Calendly or booking link)
+- Title guidelines and examples (reflect your product)
+- Any references to specific regulations or compliance standards
+
+Keep:
+- The `{{tasksContext}}` and `{{meetingsContext}}` template variables — these are populated by the code
+- The JSON response format at the bottom — the code parses this
+- The formatting guidelines (##, ###, h4, bullet points) — these map to the email template styles
+
+**`prompts/review-newsletter.md`** — Controls how the AI reviews/edits drafts.
+Replace:
+- The editor persona ("healthcare SaaS content editor" → your vertical)
+- Target audience section
+- The "Payer Language" review criteria with your industry's terminology
+- Compliance references with your relevant standards
+- Audience framing section (what your readers care about)
+
+Keep:
+- The output instructions (return improved markdown, add review summary)
+
+**`prompts/categorize-meeting.md`** — Controls how meetings are categorized.
+Replace:
+- The company name in the exclusion list ("NOT Lilee, Helios, or internal team names" → your own company names)
+- Topic options if you want different tags (default: Product Demo, Pricing, Technical, Strategy, etc.)
+
+Keep:
+- The bucket structure (Customer / Pipeline / Internal) — the code uses these values
+- The JSON response format
+- The `{{title}}` and `{{content}}` template variables
+
+### 9b. Content Guidelines (`CLAUDE.md`)
+
+`CLAUDE.md` is read by Claude Code during development sessions. The Content Guidelines section (at the bottom) tells Claude how to write for your audience when working on prompts or content.
+
+Replace the **Content Guidelines** section with your own:
+1. **Target Audience** — List your reader personas and titles
+2. **Industry Language** — Create a "avoid → use instead" table with your vertical's terminology
+3. **Compliance / Standards** — List the regulations that matter to your audience (e.g., SOC 2, GDPR, PCI-DSS, HIPAA, FDA, FedRAMP)
+4. **Impact Quantification** — Provide example metrics that resonate with your readers
+
+The rest of CLAUDE.md (architecture, commands, project structure) is generic and doesn't need changes.
+
+### 9c. Email Template (`email-template/`)
+
+The included template uses Lilee's branding (purple theme, Lilee logos). To rebrand:
+
+**Replace images:**
+- `email-template/img/lilee-logo.png` → Your company logo (used in email header)
+- `email-template/img/lilee-logo-white.png` → White version of your logo (used in email footer)
+- `email-template/img/linkedin-icon-white.png` → Keep as-is or replace with your own
+- `email-template/img/website-icon-white.png` → Keep as-is or replace with your own
+
+**Edit `email-template/index.mjml`:**
+1. **Brand color** — Search for `#503666` (Lilee purple) and replace with your primary brand color. It's used in:
+   - Headings (`h1`, `h2`, `h3`, `h4` color)
+   - Strong text (`strong { color: ... }`)
+   - Links (`a { color: ... }`)
+   - Borders and accents (`border-left`, `border-bottom`)
+   - Background gradient colors
+   - Header/footer background (`background-color`)
+   - CTA button (`background-color`, `inner-padding`)
+
+2. **Secondary/accent colors** — Search for:
+   - `#f0ebf4`, `#f8f5fa`, `#faf8fb`, `#f5f0f8` — Light tints of the brand color (used in backgrounds, callouts, TOC boxes). Generate matching light tints for your brand.
+   - `#8b6b9e` — Medium tint (used in gradients, captions). Replace with a mid-tone of your brand.
+   - `#e8e0ed` — Very light tint (used in hr gradient). Replace accordingly.
+
+3. **Footer content** — Update:
+   - Company name and tagline
+   - Social media links (LinkedIn URL, website URL)
+   - Image references to point to your logo files
+   - Legal/unsubscribe text
+
+4. **Font** — The template uses `Space Grotesk`. To change it:
+   - Replace `'Space Grotesk'` throughout the MJML
+   - Update the Google Fonts `<link>` in the `<mj-head>` (if using a web font)
+
+**Recompile and upload:**
+```bash
+# Option A: CLI
+npx mjml email-template/index.mjml -o email-template/index.html
+
+# Option B: Online
+# Paste index.mjml into https://mjml.io/try-it-live and copy the HTML output
+```
+
+After compiling, verify the `<!--[if mso]>` block in `index.html` has appropriate Outlook overrides (the MJML compiler preserves these, but double-check after major color changes).
+
+Then re-upload the compiled `index.html` to your Loops transactional template.
+
+### 9d. Package Metadata
+
+Optionally update `package.json`:
+- `"name"` — Change from `"lilee-newsletter-agent"` to your own name
+- `"description"` — Update to match your product
+
 ## Test the Full Pipeline
 
 Once everything is configured:
@@ -282,7 +391,7 @@ All AI prompts live in `prompts/` as editable Markdown files:
 | File | Purpose | Template Variables |
 |------|---------|-------------------|
 | `draft-newsletter.md` | Generates newsletter from meetings + tasks | `{{tasksContext}}`, `{{meetingsContext}}` |
-| `review-newsletter.md` | Reviews draft for payer language | (none) |
+| `review-newsletter.md` | Reviews and edits draft content | (none) |
 | `categorize-meeting.md` | Categorizes meetings into buckets | `{{title}}`, `{{content}}` |
 
 To modify a prompt, edit the Markdown file directly — no code changes needed. The prompt text starts after the `## Prompt` or `## System Prompt` heading.

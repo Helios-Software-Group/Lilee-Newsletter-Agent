@@ -1,6 +1,8 @@
-# Lilee Newsletter Agent
+# Newsletter Agent
 
-Automated newsletter pipeline that drafts, reviews, and sends weekly product updates for health plan stakeholders — powered by Claude, Notion, and Loops.
+Automated newsletter pipeline that drafts, reviews, and sends weekly product updates — powered by Claude, Notion, and Loops.
+
+> **Customizing for your company?** See [Step 9 in GUIDE.md](GUIDE.md#step-9-customize-for-your-company) for instructions on replacing branding, prompts, and content guidelines.
 
 ## How It Works
 
@@ -8,7 +10,7 @@ Automated newsletter pipeline that drafts, reviews, and sends weekly product upd
 WEEKLY (GitHub Actions or manual)
 ├── Fetch meetings + tasks from Notion (past 7 days)
 ├── Generate draft with Claude (Opus 4.5)
-├── AI review & edit for payer language (Sonnet 4)
+├── AI review & edit (Sonnet 4)
 ├── Create page in Notion (Status: Draft)
 └── Slack notification with preview link
 
@@ -28,7 +30,7 @@ AUTO-SEND (Notion webhook → Vercel → Loops)
 
 ```bash
 npm install
-cp .env.example .env        # Fill in your keys (see Setup Guide below)
+cp .env.example .env        # Fill in your keys (see GUIDE.md)
 npm run weekly               # Full pipeline: draft → review → notify
 ```
 
@@ -54,7 +56,7 @@ npm run weekly               # Full pipeline: draft → review → notify
 ├── src/
 │   ├── index.ts                  # Main orchestrator (weekly/draft/send routing)
 │   ├── draft-newsletter.ts       # Generate draft from meetings + tasks
-│   ├── review-newsletter.ts      # AI review for payer language
+│   ├── review-newsletter.ts      # AI review & edit
 │   ├── send-newsletter.ts        # CLI email sender via Loops
 │   ├── html-generator.ts         # Shared Notion → HTML converter
 │   ├── load-prompt.ts            # Prompt template loader
@@ -92,6 +94,16 @@ npm run weekly               # Full pipeline: draft → review → notify
 ```
 
 ## Architecture Details
+
+### Modular Design
+
+The codebase separates **code** (TypeScript orchestration) from **content** (what the AI writes about). You should never need to edit TypeScript files to customize your newsletter. All company-specific content lives in three places:
+
+| Layer | Files | What to customize |
+|-------|-------|-------------------|
+| **AI Prompts** | `prompts/*.md` | Your product description, audience, terminology, tone |
+| **Content Guidelines** | `CLAUDE.md` (this file) | Target audience, language rules, compliance references |
+| **Email Branding** | `email-template/` | Logo, colors, fonts, footer links |
 
 ### HTML Generation Pipeline
 
@@ -160,34 +172,35 @@ To edit a prompt, just modify the markdown file — no code changes needed.
 
 ## Content Guidelines
 
+> **Replace this section** with your own audience, language rules, and compliance references. See [GUIDE.md Step 9](GUIDE.md#step-9-customize-for-your-company) for instructions.
+
 ### Target Audience
-- VPs of Operations at health plans, TPAs, ACOs
-- CMOs / Medical Directors
-- UM Directors
-- Compliance Officers
+<!-- Replace with YOUR audience personas -->
+- [Role 1] — e.g., VPs of Operations, CTOs, Product Managers
+- [Role 2] — e.g., CMOs, Marketing Directors
+- [Role 3] — e.g., Compliance Officers, Engineering Leads
 
-### Payer Language (Required)
+### Industry Language
 
-| Avoid | Use Instead |
+<!-- Replace with terminology specific to YOUR vertical -->
+| Avoid (generic) | Use Instead (industry-specific) |
 |-------|-------------|
-| "fast" | "reduced TAT by X%" |
-| "compliant" | "CMS-0057-F compliant" |
-| "easier to use" | "Y fewer clicks per auth" |
-| "AI feature" | "consistent LCD/NCD criteria application" |
-| "documented" | "audit-ready determination letters" |
-| "decision support" | "reviewer confidence" |
+| "fast" | Your industry's preferred metric (e.g., "reduced TAT by X%", "cut cycle time by X%") |
+| "compliant" | Cite specific regulations or standards that matter to your audience |
+| "easier to use" | Quantify the improvement (e.g., "Y fewer clicks", "Z minutes saved") |
+| "AI feature" | Frame in terms your audience cares about (e.g., "consistent criteria application") |
 
-### Compliance References
-- **CMS-0057-F** — Prior auth interoperability rule
-- **NCQA** — Accreditation standards for UM
-- **URAC** — Health utilization management standards
-- **CMS 72hr/7-day** — Prior auth timeline requirements
+### Compliance / Standards References
+<!-- Replace with regulations relevant to YOUR industry -->
+- **[Standard 1]** — Description (e.g., CMS-0057-F, SOC 2, HIPAA, GDPR, PCI-DSS)
+- **[Standard 2]** — Description
+- **[Standard 3]** — Description
 
 ### Impact Quantification
 Always quantify when possible:
-- "Reduces TAT by 40%"
-- "Saves 5 min per auth x 50 auths/day = 4+ hours"
-- "Achieves 95% first-pass accuracy"
+- "[Metric] reduced by X%"
+- "[Process] saves Y hours per [unit] per [period]"
+- "Achieves Z% [quality metric]"
 
 ## Environment Variables
 
