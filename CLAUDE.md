@@ -64,13 +64,11 @@ npm run weekly               # Full pipeline: draft → review → notify
 │   ├── categorize-meetings.ts    # AI meeting categorization
 │   ├── sync-meetings.ts          # Microsoft Teams/Calendar sync
 │   ├── crm-linker.ts             # Link meetings to CRM contacts
-│   ├── delete-empty-entries.ts   # Utility: clean empty DB entries
 │   ├── agent/
 │   │   └── index.ts              # Claude Agent SDK for meeting enrichment
 │   ├── tools/
 │   │   ├── crm.ts                # CRM tool (Notion client)
-│   │   ├── graph.ts              # Microsoft Graph API client
-│   │   └── notion.ts             # Notion API wrapper
+│   │   └── graph.ts              # Microsoft Graph API client
 │   └── types/
 │       └── index.ts              # TypeScript interfaces
 │
