@@ -5,7 +5,10 @@ import type { MeetingBucket } from '../lib/types.js';
 import { loadPrompt } from '../lib/load-prompt.js';
 import { fetchPageContent } from '../lib/notion-utils.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 240_000, // 4 minutes — generous for Opus 4.6 draft generation
+});
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 const MEETINGS_DB_ID = process.env.NOTION_MEETINGS_DB_ID!;

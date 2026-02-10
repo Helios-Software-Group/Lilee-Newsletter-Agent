@@ -10,7 +10,7 @@ Automated newsletter pipeline that drafts, reviews, and sends weekly product upd
 WEEKLY (GitHub Actions or manual)
 ├── Fetch meetings + tasks from Notion (past 7 days)
 ├── Generate draft with Claude (Opus 4.6)
-├── AI review & edit (Opus 4.6)
+├── AI review & edit (Sonnet 4.5)
 ├── Create page in Notion (Status: Draft)
 └── Slack notification with preview link
 

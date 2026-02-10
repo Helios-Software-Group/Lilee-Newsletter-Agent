@@ -42,7 +42,7 @@ Set your Anthropic key now (you'll need it for AI features later):
    ANTHROPIC_API_KEY=sk-ant-...
    ```
 
-All AI features use **Claude Opus 4.6** — drafting, review, categorization, and meeting enrichment.
+AI features use the right Claude model for each task: **Opus 4.6** for newsletter drafting, **Sonnet 4.5** for review and meeting enrichment, and **Haiku 4.5** for meeting categorization.
 
 ---
 
