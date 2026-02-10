@@ -42,9 +42,7 @@ Set your Anthropic key now (you'll need it for AI features later):
    ANTHROPIC_API_KEY=sk-ant-...
    ```
 
-The system uses two models:
-- **Draft generation:** Claude Opus 4.5 — creative, long-form writing
-- **Review & categorization:** Claude Sonnet 4 — fast, precise editing
+All AI features use **Claude Opus 4.6** — drafting, review, categorization, and meeting enrichment.
 
 ---
 

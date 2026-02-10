@@ -2,7 +2,7 @@
 
 Used by `src/newsletter/draft.ts` to generate weekly newsletter content via Claude.
 
-**Model:** claude-opus-4-5-20251101
+**Model:** claude-opus-4-6
 **Max tokens:** 4000
 
 ---
