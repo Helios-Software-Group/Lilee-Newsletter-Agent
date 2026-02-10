@@ -137,7 +137,7 @@ If no external email is found after all searches, report that clearly - don't ma
       prompt,
       options: {
         systemPrompt: SYSTEM_PROMPT,
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-opus-4-6',
         maxTurns: 15,
         cwd: process.cwd(),
         // Use Notion MCP which is already connected via Claude Code

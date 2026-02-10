@@ -2,7 +2,7 @@
 
 Used by `src/categorize-meetings.ts` to extract metadata from meeting notes via Claude.
 
-**Model:** claude-sonnet-4-20250514
+**Model:** claude-opus-4-6
 **Max tokens:** 600
 
 ---

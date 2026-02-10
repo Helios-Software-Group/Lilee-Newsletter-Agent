@@ -21,7 +21,7 @@ interface ReviewResult {
  */
 async function reviewWithClaude(content: string): Promise<{ improved: string; summary: string[] }> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-opus-4-6',
     max_tokens: 8000,
     system: REVIEW_SYSTEM_PROMPT,
     messages: [{
