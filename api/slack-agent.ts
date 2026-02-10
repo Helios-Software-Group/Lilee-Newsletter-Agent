@@ -299,10 +299,13 @@ async function runDraftOnly(responseUrl: string): Promise<void> {
     console.log('✅ Slack: Draft-only complete');
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('❌ Slack draft-only error:', msg);
+    const cause = error instanceof Error && error.cause ? ` | cause: ${error.cause}` : '';
+    const stack = error instanceof Error ? error.stack?.split('\n').slice(0, 4).join('\n') : '';
+    console.error('❌ Slack draft-only error:', msg, cause);
+    console.error('Stack:', stack);
     await postToSlack(responseUrl, {
       response_type: 'ephemeral',
-      text: `❌ Draft failed: ${msg}`,
+      text: `❌ Draft failed: ${msg}${cause}`,
     });
   }
 }

@@ -860,6 +860,8 @@ async function draftNewsletter() {
 
   // Step 6: Generate draft with Claude
   console.log('\n🤖 Step 5: Generating newsletter draft with AI...');
+  console.log(`   Prompt context: meetings=${meetingsContext.length}ch, tasks=${completedTasksContext.length}ch, inProgress=${inProgressTasksContext.length}ch`);
+  console.log(`   Calling Anthropic API (claude-opus-4-6, timeout=240s)...`);
   const draft = await generateNewsletterDraft(
     meetingsContext,
     completedTasksContext,
