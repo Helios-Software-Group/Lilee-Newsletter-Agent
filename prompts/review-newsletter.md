@@ -2,7 +2,7 @@
 
 Used by `src/newsletter/review.ts` as the system prompt for Claude to review and edit newsletter drafts.
 
-**Model:** claude-opus-4-6
+**Model:** claude-sonnet-4-5
 **Max tokens:** 8000
 
 ---
