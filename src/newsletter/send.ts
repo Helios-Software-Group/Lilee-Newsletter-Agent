@@ -7,6 +7,8 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const NEWSLETTER_DB_ID = process.env.NOTION_NEWSLETTER_DB_ID!;
 const LOOPS_API_KEY = process.env.LOOPS_API_KEY!;
 const LOOPS_TRANSACTIONAL_ID = process.env.LOOPS_TRANSACTIONAL_ID!;
+const TEST_EMAIL = process.env.TEST_EMAIL || 'your-email@example.com';
+const TEST_EMAIL_NAME = process.env.TEST_EMAIL_NAME || 'Test';
 
 interface NewsletterToSend {
   id: string;
@@ -72,7 +74,7 @@ async function getEmailRecipients(): Promise<LoopsContact[]> {
   // Hardcoded recipients for testing
   // TODO: Expand to pull from Loops audience or Notion database
   const recipients: LoopsContact[] = [
-    { email: 'olivier@lilee.ai', firstName: 'Olivier' },
+    { email: TEST_EMAIL, firstName: TEST_EMAIL_NAME },
   ];
 
   console.log(`   📧 Found ${recipients.length} recipient(s)`);

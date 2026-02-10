@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@notionhq/client';
 import type { MeetingBucket } from '../lib/types.js';
 import { loadPrompt } from '../lib/load-prompt.js';
+import { fetchPageContent } from '../lib/notion-utils.js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -218,11 +219,137 @@ function formatTasksForPrompt(projectTasks: ProjectTasks[]): string {
 }
 
 /**
+ * Get the most recent newsletter with Status = "Sent".
+ * Returns the markdown content of that page, or null if none exist.
+ */
+async function getLastSentNewsletter(): Promise<string | null> {
+  const response = await notion.databases.query({
+    database_id: NEWSLETTER_DB_ID,
+    filter: {
+      property: 'Status',
+      status: { equals: 'Sent' },
+    },
+    sorts: [{ property: 'Issue date', direction: 'descending' }],
+    page_size: 1,
+  });
+
+  if (response.results.length === 0) return null;
+
+  const pageId = response.results[0].id;
+  return fetchPageContent(notion, pageId);
+}
+
+/**
+ * Get tasks that are NOT Done, edited within the last 14 days.
+ * Grouped by project — same structure as getCompletedTasks().
+ */
+async function getInProgressTasks(): Promise<ProjectTasks[]> {
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+  const response = await notion.databases.query({
+    database_id: TASKS_DB_ID,
+    filter: {
+      property: 'Status',
+      status: { does_not_equal: 'Done' },
+    },
+    sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }],
+  });
+
+  const projectMap = new Map<string, TaskSummary[]>();
+
+  for (const page of response.results) {
+    const p = page as any;
+
+    // Only include tasks edited in the last 14 days
+    const lastEdited = new Date(p.last_edited_time);
+    if (lastEdited < fourteenDaysAgo) continue;
+
+    let projectName = 'Other';
+    const projectRelation = p.properties.Project?.relation;
+    if (projectRelation && projectRelation.length > 0) {
+      try {
+        const projectPage = await notion.pages.retrieve({ page_id: projectRelation[0].id }) as any;
+        projectName = projectPage.properties?.Name?.title?.[0]?.plain_text ||
+                     projectPage.properties?.['Project name']?.title?.[0]?.plain_text ||
+                     'Other';
+      } catch {
+        projectName = 'Other';
+      }
+    }
+
+    const task: TaskSummary = {
+      title: p.properties['Task name']?.title?.[0]?.plain_text || 'Untitled',
+      project: projectName,
+      status: p.properties.Status?.status?.name || 'In Progress',
+      completedDate: p.last_edited_time.split('T')[0],
+      assignee: '',
+      url: p.url,
+    };
+
+    if (!projectMap.has(projectName)) {
+      projectMap.set(projectName, []);
+    }
+    projectMap.get(projectName)!.push(task);
+  }
+
+  return Array.from(projectMap.entries()).map(([projectName, tasks]) => ({
+    projectName,
+    tasks,
+  }));
+}
+
+/**
+ * Format previous newsletter content for Claude's continuity context
+ */
+function formatPreviousNewsletter(content: string | null): string {
+  if (!content) {
+    return 'This is the first newsletter — no previous issue to reference.';
+  }
+
+  return [
+    '## Previous Newsletter (Most Recent Sent Issue)',
+    '',
+    'Use this to maintain continuity:',
+    '- Items from "What\'s Coming Next Week" that are now Done → move to "What Shipped"',
+    '- Don\'t repeat features already covered in detail below',
+    '- Track the evolution: planning → testing → shipped across issues',
+    '',
+    '---',
+    '',
+    content,
+  ].join('\n');
+}
+
+/**
+ * Format in-progress tasks for Claude with status indicators
+ */
+function formatInProgressTasks(projectTasks: ProjectTasks[]): string {
+  if (projectTasks.length === 0) {
+    return 'No in-progress tasks found in the past 14 days.';
+  }
+
+  let context = '## In-Progress Engineering Tasks (by Project)\n\n';
+
+  for (const project of projectTasks) {
+    context += `### ${project.projectName}\n`;
+    for (const task of project.tasks) {
+      context += `- [${task.status}] ${task.title} (last edited ${task.completedDate})\n`;
+    }
+    context += '\n';
+  }
+
+  return context;
+}
+
+/**
  * Generate newsletter draft using Claude
  */
 async function generateNewsletterDraft(
   meetingsContext: string,
-  tasksContext: string
+  completedTasksContext: string,
+  inProgressTasksContext: string,
+  previousNewsletterContext: string,
 ): Promise<{
   title: string;
   highlights: string;
@@ -238,7 +365,12 @@ async function generateNewsletterDraft(
     max_tokens: 4000,
     messages: [{
       role: 'user',
-      content: loadPrompt('draft-newsletter', { tasksContext, meetingsContext }),
+      content: loadPrompt('draft-newsletter', {
+        tasksContext: completedTasksContext,
+        meetingsContext,
+        inProgressTasks: inProgressTasksContext,
+        previousNewsletter: previousNewsletterContext,
+      }),
     }]
   });
 
@@ -473,8 +605,11 @@ async function addCollateralChecklist(
  * Parse inline markdown (bold, italic, links) into Notion rich_text array
  */
 function parseInlineMarkdown(text: string): any[] {
+  // Strip any inline HTML spans that slipped through
+  text = text.replace(/<span[^>]*>(.*?)<\/span>/gi, '$1');
+
   const richText: any[] = [];
-  
+
   // Pattern to match **bold**, *italic*, [links](url), ![images](url)
   const pattern = /(\*\*(.+?)\*\*|\*([^*]+)\*|\[([^\]]+)\]\(([^)]+)\)|!\[([^\]]*)\]\(([^)]+)\))/g;
   
@@ -547,7 +682,12 @@ function convertMarkdownToBlocks(markdown: string): any[] {
   let htmlBuffer = '';
   let inHtmlBlock = false;
 
-  for (const line of lines) {
+  for (let line of lines) {
+    // Strip inline HTML tags that Notion renders as raw text
+    // <span class="...">text</span> → text
+    // <h4>text</h4> → text  (handled separately below, but strip if inline)
+    line = line.replace(/<span[^>]*>(.*?)<\/span>/gi, '$1');
+
     // Handle HTML blocks (tables)
     if (line.trim().startsWith('<table') || inHtmlBlock) {
       inHtmlBlock = true;
@@ -694,23 +834,45 @@ async function draftNewsletter() {
     return;
   }
 
-  // Step 3: Format for Claude
-  const meetingsContext = formatMeetingsForPrompt(meetings);
-  const tasksContext = formatTasksForPrompt(projectTasks);
+  // Step 3: Gather in-progress tasks
+  console.log('\n🔄 Step 3: Gathering in-progress tasks...');
+  const inProgressProjectTasks = await getInProgressTasks();
+  const totalInProgress = inProgressProjectTasks.reduce((sum, p) => sum + p.tasks.length, 0);
+  console.log(`   Found ${totalInProgress} in-progress tasks across ${inProgressProjectTasks.length} projects`);
 
-  // Step 4: Generate draft with Claude
-  console.log('\n🤖 Step 3: Generating newsletter draft with AI...');
-  const draft = await generateNewsletterDraft(meetingsContext, tasksContext);
+  // Step 4: Fetch previous Sent newsletter for continuity
+  console.log('\n📰 Step 4: Fetching previous newsletter for continuity...');
+  const previousContent = await getLastSentNewsletter();
+  if (previousContent) {
+    console.log(`   Found previous newsletter (${previousContent.length} chars)`);
+  } else {
+    console.log('   No previous Sent newsletter found — this will be the first issue');
+  }
+
+  // Step 5: Format all context for Claude
+  const meetingsContext = formatMeetingsForPrompt(meetings);
+  const completedTasksContext = formatTasksForPrompt(projectTasks);
+  const inProgressTasksContext = formatInProgressTasks(inProgressProjectTasks);
+  const previousNewsletterContext = formatPreviousNewsletter(previousContent);
+
+  // Step 6: Generate draft with Claude
+  console.log('\n🤖 Step 5: Generating newsletter draft with AI...');
+  const draft = await generateNewsletterDraft(
+    meetingsContext,
+    completedTasksContext,
+    inProgressTasksContext,
+    previousNewsletterContext,
+  );
   console.log(`   Title: ${draft.title}`);
   console.log(`   Highlights: ${draft.highlights}`);
 
-  // Step 5: Create in Notion
-  console.log('\n📝 Step 4: Creating draft in Notion...');
+  // Step 7: Create in Notion
+  console.log('\n📝 Step 6: Creating draft in Notion...');
   const notionPage = await createNewsletterInNotion(draft);
   console.log(`   Created: ${notionPage.url}`);
 
-  // Step 6: Add collateral checklist
-  console.log('\n📋 Step 5: Adding collateral checklist...');
+  // Step 8: Add collateral checklist
+  console.log('\n📋 Step 7: Adding collateral checklist...');
   await addCollateralChecklist(
     notionPage.id,
     draft.suggestedCollateral,

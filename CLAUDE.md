@@ -126,6 +126,12 @@ To edit a prompt, just modify the markdown file — no code changes needed.
 **POST `/api/webhook`** — Meeting enrichment
 - Called by Notion when a new meeting is created
 
+**POST `/api/slack-agent`** — Slack slash commands
+- Receives `/newsletter` slash commands from Slack
+- Verifies request signature via `SLACK_SIGNING_SECRET`
+- Commands: `status`, `draft`, `send`, `help`
+- Long-running commands respond immediately, then POST results back to Slack's `response_url`
+
 ## Notion Database Schema
 
 ### Newsletter DB
@@ -202,10 +208,12 @@ See `.env.example` for all required variables. Key groups:
 | Group | Variables | Purpose |
 |-------|-----------|---------|
 | Anthropic | `ANTHROPIC_API_KEY` | Claude API for drafting, review, categorization |
-| Notion | `NOTION_API_KEY`, `*_DB_ID` | Database access for meetings, tasks, newsletters, subscribers |
+| Notion | `NOTION_API_KEY`, `*_DB_ID`, `*_COLLECTION_ID` | Database access for meetings, tasks, newsletters, subscribers |
 | Loops | `LOOPS_API_KEY`, `LOOPS_TRANSACTIONAL_ID` | Transactional email sending |
 | Slack | `SLACK_WEBHOOK_URL` | Draft notifications (optional) |
+| Slack Bot | `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET` | `/newsletter` slash commands (optional) |
 | Supabase | `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET` | Permanent image hosting (optional) |
 | Webhook | `NOTION_WEBHOOK_SECRET` | Auto-send authentication (optional) |
+| Testing | `TEST_EMAIL`, `TEST_EMAIL_NAME` | Test send recipient (defaults to placeholder) |
 
 For full setup instructions, see **[GUIDE.md](GUIDE.md)**.

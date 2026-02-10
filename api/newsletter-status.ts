@@ -28,6 +28,8 @@ const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'newsletter-images';
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const LOOPS_API_KEY = process.env.LOOPS_API_KEY;
 const LOOPS_TRANSACTIONAL_ID = process.env.LOOPS_TRANSACTIONAL_ID;
+const TEST_EMAIL = process.env.TEST_EMAIL || 'your-email@example.com';
+const TEST_EMAIL_NAME = process.env.TEST_EMAIL_NAME || 'Test';
 
 interface NewsletterStatusPayload {
   pageId: string;
@@ -242,7 +244,7 @@ async function fetchNewsletterContent(notion: Client, pageId: string): Promise<{
   return { title, issueDate, highlights, contentHtml, collateralHtml };
 }
 
-const CONTACTS_DB_ID = process.env.NOTION_CONTACTS_DB_ID || '2fe09b01-2a5f-8092-b909-d7a91c8e9abc';
+const CONTACTS_DB_ID = process.env.NOTION_CONTACTS_DB_ID || '';
 
 /**
  * Get contacts from Notion filtered by audience
@@ -310,13 +312,13 @@ async function getNewsletterAudience(notion: Client, pageId: string): Promise<st
 
 /**
  * Get newsletter recipients
- * - Test send: only olivier@lilee.ai
+ * - Test send: uses TEST_EMAIL env var
  * - Full send: contacts matching newsletter's audience
  */
 async function getRecipients(notion: Client, pageId: string, isTestSend: boolean): Promise<LoopsContact[]> {
   if (isTestSend) {
     const testRecipients: LoopsContact[] = [
-      { email: 'olivier@lilee.ai', firstName: 'Olivier' },
+      { email: TEST_EMAIL, firstName: TEST_EMAIL_NAME },
     ];
     console.log(`   🧪 Test send: using ${testRecipients.length} test recipient(s)`);
     return testRecipients;
@@ -327,7 +329,7 @@ async function getRecipients(notion: Client, pageId: string, isTestSend: boolean
   
   if (audiences.length === 0) {
     console.log('   ⚠️  No audience set on newsletter, falling back to test recipient');
-    return [{ email: 'olivier@lilee.ai', firstName: 'Olivier' }];
+    return [{ email: TEST_EMAIL, firstName: TEST_EMAIL_NAME }];
   }
 
   // Get contacts matching the audience
@@ -335,7 +337,7 @@ async function getRecipients(notion: Client, pageId: string, isTestSend: boolean
   
   if (contacts.length === 0) {
     console.log('   ⚠️  No contacts found for audience, falling back to test recipient');
-    return [{ email: 'olivier@lilee.ai', firstName: 'Olivier' }];
+    return [{ email: TEST_EMAIL, firstName: TEST_EMAIL_NAME }];
   }
 
   return contacts;

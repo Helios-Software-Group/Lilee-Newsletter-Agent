@@ -2,6 +2,7 @@ import '../lib/env.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@notionhq/client';
 import { loadPrompt } from '../lib/load-prompt.js';
+import { fetchPageContent } from '../lib/notion-utils.js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -13,68 +14,6 @@ interface ReviewResult {
   pageId: string;
   changesSummary: string[];
   error?: string;
-}
-
-/**
- * Fetch the content of a newsletter page from Notion
- */
-async function fetchPageContent(pageId: string): Promise<string> {
-  const blocks = await notion.blocks.children.list({
-    block_id: pageId,
-    page_size: 100,
-  });
-
-  let markdown = '';
-
-  for (const block of blocks.results) {
-    const b = block as any;
-    const type = b.type;
-
-    switch (type) {
-      case 'heading_1':
-        markdown += `# ${getRichText(b.heading_1?.rich_text)}\n\n`;
-        break;
-      case 'heading_2':
-        markdown += `## ${getRichText(b.heading_2?.rich_text)}\n\n`;
-        break;
-      case 'heading_3':
-        markdown += `### ${getRichText(b.heading_3?.rich_text)}\n\n`;
-        break;
-      case 'paragraph':
-        const text = getRichText(b.paragraph?.rich_text);
-        if (text) markdown += `${text}\n\n`;
-        break;
-      case 'bulleted_list_item':
-        markdown += `- ${getRichText(b.bulleted_list_item?.rich_text)}\n`;
-        break;
-      case 'numbered_list_item':
-        markdown += `1. ${getRichText(b.numbered_list_item?.rich_text)}\n`;
-        break;
-      case 'quote':
-        markdown += `> ${getRichText(b.quote?.rich_text)}\n\n`;
-        break;
-      case 'divider':
-        markdown += '---\n\n';
-        break;
-      case 'callout':
-        markdown += `> **Note:** ${getRichText(b.callout?.rich_text)}\n\n`;
-        break;
-      case 'to_do':
-        const checked = b.to_do?.checked ? '[x]' : '[ ]';
-        markdown += `- ${checked} ${getRichText(b.to_do?.rich_text)}\n`;
-        break;
-    }
-  }
-
-  return markdown.trim();
-}
-
-/**
- * Extract plain text from Notion rich text array
- */
-function getRichText(richText: any[]): string {
-  if (!richText) return '';
-  return richText.map((t: any) => t.plain_text || '').join('');
 }
 
 /**
@@ -226,8 +165,16 @@ async function updatePageContent(pageId: string, markdown: string): Promise<void
   for (const line of lines) {
     if (!line.trim()) continue;
 
-    // Headers
-    if (line.startsWith('### ')) {
+    // Headers (#### mapped to heading_3 as safety net — Notion has no heading_4)
+    if (line.startsWith('#### ')) {
+      blocks.push({
+        object: 'block',
+        type: 'heading_3',
+        heading_3: {
+          rich_text: parseInlineMarkdown(line.slice(5)),
+        },
+      });
+    } else if (line.startsWith('### ')) {
       blocks.push({
         object: 'block',
         type: 'heading_3',
@@ -325,7 +272,7 @@ export async function reviewAndEditNewsletter(pageId: string): Promise<ReviewRes
   try {
     // Step 1: Fetch current content
     console.log('\n📄 Step 1: Fetching draft content...');
-    const originalContent = await fetchPageContent(pageId);
+    const originalContent = await fetchPageContent(notion, pageId);
 
     if (!originalContent || originalContent.length < 100) {
       console.log('   ⚠️  Draft content is too short or empty. Skipping review.');

@@ -149,7 +149,7 @@ export async function generateContentHtml(
         break;
 
       case 'heading_2':
-        html += `<hr>\n<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
+        html += `<h2>${getRichText(b.heading_2?.rich_text)}</h2>\n`;
         break;
 
       case 'heading_3': {

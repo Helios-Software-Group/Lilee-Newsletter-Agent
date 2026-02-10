@@ -1,6 +1,6 @@
 # Newsletter Draft Prompt
 
-Used by `src/draft-newsletter.ts` to generate weekly newsletter content via Claude.
+Used by `src/newsletter/draft.ts` to generate weekly newsletter content via Claude.
 
 **Model:** claude-opus-4-5-20251101
 **Max tokens:** 4000
@@ -21,8 +21,13 @@ You are drafting a weekly product newsletter for Lilee, an AI-powered healthcare
 
 ---
 
-**ENGINEERING TASKS COMPLETED THIS WEEK:**
+**COMPLETED ENGINEERING TASKS:**
 {{tasksContext}}
+
+---
+
+**IN-PROGRESS ENGINEERING TASKS:**
+{{inProgressTasks}}
 
 ---
 
@@ -31,69 +36,97 @@ You are drafting a weekly product newsletter for Lilee, an AI-powered healthcare
 
 ---
 
+**PREVIOUS NEWSLETTER (for continuity):**
+{{previousNewsletter}}
+
+---
+
 **Instructions:**
-1. Generate a newsletter with 2-3 Big Features based on the completed engineering tasks and meeting discussions
-2. Focus on what was SHIPPED/COMPLETED this week (from the tasks)
-3. Use customer feedback from meetings to add context and validate the features
-4. For each feature, include:
-   - What shipped (bullets from the actual tasks completed)
-   - Why this matters for their operation (connect to CMS, TAT, staffing, care quality)
-   - Operational impact (quantify where possible)
-   - Compliance angle where relevant
 
-5. Use payer language: TAT, LCD/NCD criteria, medical necessity, audit-ready, reviewer confidence
-6. Include a Roadmap section with regulatory alignment
-7. Include Customer Feedback section with quotes from meetings
-8. ALWAYS end with a "One Ask" section that includes a CTA to book a discovery call: https://calendly.com/lilee-ai/discovery-call-lilee-ai
-   - Frame the ask around the main feature (e.g., "Want to see Ellie in action? Book a quick call with our team.")
-   - The CTA button is already in the email template, but the "One Ask" section should introduce it with context
+Generate a newsletter with EXACTLY 4 sections in this order:
 
-**TITLE GUIDELINES (CRITICAL):**
-- DO NOT use "Lilee Product Update — [date]" - the date is already shown separately
-- Create an ORIGINAL, compelling title that highlights the main feature or theme
-- Examples of GOOD titles:
-  - "Introducing Lilee Chat: Your Clinical Review Copilot"
-  - "Faster Determinations, Better Audit Trails"
-  - "CMS-0057-F Ready: New Interoperability Features"
-  - "From 20 Clicks to 2: Streamlined Auth Workflows"
-- The title should make readers want to open the email
+### Section 1: What Shipped This Week
+- Cross-reference completed tasks + meetings to determine what actually shipped
+- If the previous newsletter listed something under "What's Coming" and it's now Done → feature it here
+- **Select the TOP 2-3 most impactful features — do NOT list every completed task**
+- Prioritize features with: customer evidence from meetings, quantifiable metrics, compliance angle
+- Remaining completed items can be mentioned as single bullets in "What's Coming" if still evolving, or omitted
+- Each feature gets a ## heading with emoji and status: `## 🚀 Feature Name — ✅ Live`
+- Structure each feature with **### subheadings + bullets** — NOT just a wall of bullets:
+  - Use ### subheadings to break up content (e.g., `### What changed`, `### Operational impact`, `### By the numbers`)
+  - 2-3 bullets per subheading — short and scannable
+  - Each feature should have 2-3 subheadings total
+- Use **bold** for metrics and key terms (e.g., **40% reduction in TAT**)
+- Use *italic* for regulation references only (e.g., *CMS-0057-F*)
+- Add --- divider between features
 
-**Formatting Guidelines (IMPORTANT):**
-- Use ## for main section headers (e.g., "## What Shipped This Week", "## Roadmap", "## Customer Feedback", "## One Ask")
-- Use ### with emoji for feature titles (e.g., "### 🚀 Introducing Ellie: Your New Helpful Co-Pilot")
-- Use `<h4>` tags for subsection labels - these render as purple pill badges in email:
-  - `<h4>What's Live:</h4>`
-  - `<h4>Why This Matters for Your Operation:</h4>`
-  - `<h4>Operational Impact:</h4>`
-  - `<h4>Compliance Angle:</h4>`
-  - `<h4>What's In Progress:</h4>`
-- Use bullet points (-) for lists
-- **BOLD all new feature names, product names, and key terms** when first mentioned in a paragraph (e.g., "This week we're introducing **Lilee Chat**—a conversational interface...")
-- Use **bold** for metric lead-ins (e.g., "**Reduced Review TAT**: 40% faster...")
-- Add --- divider between major feature sections for visual separation
-- Use > for customer quotes in blockquotes
+**After all features, add a ### subsection:**
+```
+### Why This Matters
+```
+- 2-4 bullets summarizing the combined operational impact of this week's shipped features
+- State the impact directly — do NOT label by role (no "VPs of Operations:", "Compliance Officers:", etc.)
+- Good: `- Cuts average determination TAT from 48 hours to under 24, keeping you ahead of *CMS-0057-F* deadlines`
+- Good: `- Reduces manual review touches by 3 per auth, freeing reviewer capacity for complex cases`
+- Bad: `- **VPs of Operations:** TAT reduction and SLA compliance improvements`
+- Reference specific features and metrics from above — no generic platitudes
 
-**STATUS BADGES (use inline HTML spans):**
-For feature titles, add status indicators using these classes:
-- `<span class="status-live">Live</span>` - for features currently available
-- `<span class="status-testing">In Testing</span>` - for features in beta/testing
-- `<span class="status-coming">Coming Soon</span>` - for upcoming features
+### Section 2: What's Coming Next Week
+- Cross-reference in-progress tasks + meeting discussions + sprint plans
+- Do NOT repeat items already covered in "What Shipped"
+- Format: `- **Feature Name** — 🧪 *In Testing*` or `- **Feature** — 🔜 *Sprint Planning*`
+- Include 1-line context for each item (what it does or why it matters)
 
-Example: `### 🚀 Introducing Ellie <span class="status-live">Live</span>`
+### Section 3: Customer Feedback
+- Pull quotes from customer/pipeline meetings
+- Format each quote as a single blockquote block — quote text and attribution on ONE `>` line:
+  ```
+  > "Quote text here." — Name, Title at Company
+  ```
+- Do NOT split the quote and attribution across separate `>` lines (that breaks rendering)
+- After each quote, add 1-2 bullet points on what resonated and operational significance
 
-**TABLE FORMATTING (CRITICAL):**
-- DO NOT use markdown table syntax (| pipes) - it won't render in email
-- Instead, format roadmap/comparison data as styled HTML tables
+### Section 4: One Ask
+- 1-2 sentences framing the main value from this week
+- End with: `👉 [Book a discovery call](https://calendly.com/lilee-ai/discovery-call-lilee-ai)`
+
+---
+
+**CONTINUITY RULES (CRITICAL):**
+- If the previous newsletter mentioned something as "Coming Next Week" and it's now Done → it MUST appear in "What Shipped"
+- Never repeat a feature that was already covered in detail in the previous issue
+- Track feature evolution across issues: planning → testing → shipped
+- Use the previous newsletter to understand what's already been communicated to readers
+
+---
+
+**TITLE GUIDELINES:**
+- DO NOT use "Lilee Product Update — [date]" — the date is shown separately
+- Create an ORIGINAL, compelling title highlighting the main feature
+- Examples: "Faster Determinations, Better Audit Trails" / "From 20 Clicks to 2: Streamlined Auth Workflows"
+
+**FORMATTING RULES (CRITICAL — NO HTML):**
+- Use # for the 4 section headers (What Shipped, What's Coming, Customer Feedback, One Ask)
+- Use ## with emoji for feature titles in What Shipped
+- Use ### for subheadings within features (What changed, Operational impact, etc.)
+- Only 3 heading levels: #, ##, ### — NEVER use #### or deeper
+- Status indicators are emoji ONLY: ✅ Live, 🧪 In Testing, 🔜 Coming Soon
+- NO `<span>`, `<h4>`, `<table>`, or any other HTML tags — they render as raw text
+- NO tables of any kind — use bullet lists instead
+- NO paragraph-style descriptions — ALL content must be bullets under headings
+- **Bold** for product names, metrics, and key terms
+- *Italic* for regulation names only
+- Use payer language: TAT, LCD/NCD criteria, medical necessity, audit-ready, reviewer confidence
 
 **Response Format (JSON):**
 ```json
 {
-  "title": "Creative, compelling title highlighting the main feature (NOT 'Lilee Product Update — date')",
+  "title": "Creative, compelling title highlighting the main feature",
   "highlights": "Brief 1-2 sentence summary of key updates",
   "primaryCustomer": "Name of primary customer mentioned, or empty string",
-  "content": "Full newsletter content in Markdown format with HTML tables",
+  "content": "Full newsletter content in Markdown (NO HTML)",
   "suggestedCollateral": ["List of screenshots, videos, or attachments that would enhance this newsletter"],
-  "reviewQuestions": ["Questions the team should answer before sending", "e.g., 'Should we include the TAT metrics from ACV?'"]
+  "reviewQuestions": ["Questions the team should answer before sending"]
 }
 ```
 
