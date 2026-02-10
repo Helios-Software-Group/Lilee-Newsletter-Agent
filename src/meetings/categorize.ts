@@ -4,7 +4,7 @@ import { Client } from '@notionhq/client';
 import type { MeetingBucket } from '../lib/types.js';
 import { loadPrompt } from '../lib/load-prompt.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() });
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 const MEETINGS_DB_ID = process.env.NOTION_MEETINGS_DB_ID!;

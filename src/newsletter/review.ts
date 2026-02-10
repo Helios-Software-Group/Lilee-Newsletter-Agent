@@ -4,7 +4,7 @@ import { Client } from '@notionhq/client';
 import { loadPrompt } from '../lib/load-prompt.js';
 import { fetchPageContent } from '../lib/notion-utils.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() });
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 const REVIEW_SYSTEM_PROMPT = loadPrompt('review-newsletter');

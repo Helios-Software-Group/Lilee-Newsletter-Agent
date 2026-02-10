@@ -62,7 +62,7 @@ async function runWeeklyWorkflow() {
   const { Client } = await import('@notionhq/client');
 
   // Run categorization inline to avoid module issues
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() });
   const notion = new Client({ auth: process.env.NOTION_API_KEY });
   const MEETINGS_DB_ID = process.env.NOTION_MEETINGS_DB_ID!;
 

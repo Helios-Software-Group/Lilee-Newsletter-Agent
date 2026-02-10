@@ -6,7 +6,7 @@ import { loadPrompt } from '../lib/load-prompt.js';
 import { fetchPageContent } from '../lib/notion-utils.js';
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: process.env.ANTHROPIC_API_KEY?.trim(),
   timeout: 240_000, // 4 minutes — generous for Opus 4.6 draft generation
 });
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
