@@ -66,29 +66,28 @@ Create an API integration so the pipeline can read and write to your Notion work
 
 ## Step 3: Notion AI Meeting Notes
 
-Configure Notion to auto-capture meeting notes that feed into your newsletter.
+Connect your meeting tools so Notion automatically captures notes and summaries from every meeting.
 
-### 3a. Connect Your Calendar
+### 3a. Connect Microsoft Teams & Outlook
 
-1. In Notion, go to **Settings & Members** → **Connections**
-2. Find your calendar provider (Google Calendar, Outlook, etc.)
-3. Connect it and grant access to your calendar events
-4. Notion will start creating pages for your upcoming meetings
+1. In Notion, go to **Settings** → **Connections**
+2. Connect **Microsoft Teams** — this enables automatic meeting recording and AI-generated notes
+3. Connect **Microsoft Outlook** — this syncs your calendar so Notion knows about upcoming meetings
+4. Grant the requested permissions when prompted
+
+> When you join a Teams meeting, Notion will automatically create a page with AI-generated notes, summary, and action items — no manual work needed.
 
 ### 3b. Set the Meeting Notes Database
 
-1. When Notion creates meeting note pages, it places them in a default location
-2. Configure Notion to create meeting notes inside your **Meetings database** (created in Step 4)
-3. In Notion Calendar settings, set the "Database for notes" to point at your Meetings DB
+1. In Notion's connection settings, find the **"Database for notes"** option
+2. Point it at your **Meetings database** (created in Step 4)
+3. This ensures all auto-generated meeting notes land in the right place
 
-### 3c. AI Summaries
+### 3c. Summaries Are Automatic
 
-Notion AI can auto-summarize meeting notes:
-- After a meeting, open the meeting page in Notion
-- Use Notion AI to summarize: type `/ai` → "Summarize this page"
-- The newsletter pipeline also generates its own summaries via `npm run categorize`
+Notion AI generates meeting summaries automatically when it captures meeting notes. You don't need to do anything — summaries, key takeaways, and action items are filled in as part of the auto-capture.
 
-> **Note:** Notion AI features require a paid Notion plan. If unavailable, the categorization script (`npm run categorize`) will still extract summaries from whatever content is in the meeting pages.
+The newsletter pipeline reads these summaries directly when generating drafts.
 
 If your meeting notes live in a **separate database** from your Meetings database, set in `.env`:
 ```
@@ -100,6 +99,8 @@ NOTION_MEETING_NOTES_DB_ID=<meeting-notes-db-id>
 ## Step 4: Notion Databases — Core Setup
 
 You need 3 core databases. Create them in Notion with these properties:
+
+> **Tip:** You can use Notion AI to set this up. Open a new page, type `/ai`, and ask it to create each database with the properties listed below. You can also ask Notion AI questions about any of these steps if you get stuck.
 
 ### 4a. Newsletter DB
 
@@ -132,7 +133,9 @@ You need 3 core databases. Create them in Notion with these properties:
 - **Pipeline** — Sales/prospect meetings (discovery calls, proposals, negotiations)
 - **Internal** — Team meetings (standups, planning, strategy, hiring)
 
-The AI categorization (`npm run categorize`) auto-fills Bucket, Company, Topics, and Summary for each meeting.
+**Auto-filling columns with Notion AI:** Configure Notion's built-in autofill on each column (Bucket, Company, Topics, Summary, Action Items) with custom AI prompts. In Notion, click a column header → "Edit property" → enable autofill and write a prompt that tells AI how to categorize based on the meeting content. This is the primary method for keeping your Meetings DB organized.
+
+> **Fallback:** The `npm run categorize` command uses Claude to backfill any meetings that Notion's autofill missed. It's useful for catching gaps, but not required if your Notion autofill prompts are working well.
 
 ### 4c. Tasks DB
 
@@ -160,21 +163,7 @@ NOTION_TASKS_DB_ID=<tasks-db-id>
 NOTION_NEWSLETTER_DB_ID=<newsletter-db-id>
 ```
 
-### 4f. Copy Collection IDs (for SQL queries)
-
-Some features use Notion's SQL query API, which requires **Collection IDs** (different from Database IDs):
-
-1. Open a database in Notion
-2. The Collection ID is the same as the Database ID for most databases
-3. Set in `.env`:
-   ```
-   NOTION_MEETINGS_COLLECTION_ID=<meetings-collection-id>
-   NOTION_NEWSLETTER_COLLECTION_ID=<newsletter-collection-id>
-   ```
-
-> **Tip:** If you're unsure, use the same value as the Database ID — they're often identical.
-
-**Env vars set:** `NOTION_MEETINGS_DB_ID`, `NOTION_TASKS_DB_ID`, `NOTION_NEWSLETTER_DB_ID`, `NOTION_MEETINGS_COLLECTION_ID`, `NOTION_NEWSLETTER_COLLECTION_ID`
+**Env vars set:** `NOTION_MEETINGS_DB_ID`, `NOTION_TASKS_DB_ID`, `NOTION_NEWSLETTER_DB_ID`
 
 ---
 
@@ -414,8 +403,6 @@ In the Vercel dashboard → your project → **Settings** → **Environment Vari
 | `NOTION_NEWSLETTER_DB_ID` | Yes | |
 | `NOTION_CONTACTS_DB_ID` | Yes | For audience-based sending |
 | `NOTION_SPRINTS_DB_ID` | Yes | |
-| `NOTION_MEETINGS_COLLECTION_ID` | Yes | |
-| `NOTION_NEWSLETTER_COLLECTION_ID` | Yes | |
 | `LOOPS_API_KEY` | Yes | |
 | `LOOPS_TRANSACTIONAL_ID` | Yes | |
 | `TEST_EMAIL` | Yes | Your test recipient |
@@ -774,8 +761,6 @@ Go to your repo → **Settings** → **Secrets and variables** → **Actions**, 
 - `NOTION_TASKS_DB_ID`
 - `NOTION_NEWSLETTER_DB_ID`
 - `NOTION_SPRINTS_DB_ID`
-- `NOTION_MEETINGS_COLLECTION_ID`
-- `NOTION_NEWSLETTER_COLLECTION_ID`
 - `SLACK_WEBHOOK_URL`
 - `LOOPS_API_KEY`
 - `LOOPS_TRANSACTIONAL_ID`
@@ -810,7 +795,6 @@ You can always trigger a run manually:
 |-------|-----------|---------|
 | Anthropic | `ANTHROPIC_API_KEY` | Claude API for drafting, review, categorization |
 | Notion | `NOTION_API_KEY`, `*_DB_ID` | Database access for meetings, tasks, newsletters, contacts, sprints |
-| Notion SQL | `*_COLLECTION_ID` | Collection IDs for Notion SQL queries |
 | Loops | `LOOPS_API_KEY`, `LOOPS_TRANSACTIONAL_ID` | Transactional email delivery |
 | Slack | `SLACK_WEBHOOK_URL` | Draft notifications (optional) |
 | Slack Bot | `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET` | `/newsletter` slash commands (optional) |

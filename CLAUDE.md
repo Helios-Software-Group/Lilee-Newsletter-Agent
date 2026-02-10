@@ -208,7 +208,7 @@ See `.env.example` for all required variables. Key groups:
 | Group | Variables | Purpose |
 |-------|-----------|---------|
 | Anthropic | `ANTHROPIC_API_KEY` | Claude API for drafting, review, categorization |
-| Notion | `NOTION_API_KEY`, `*_DB_ID`, `*_COLLECTION_ID` | Database access for meetings, tasks, newsletters, subscribers |
+| Notion | `NOTION_API_KEY`, `*_DB_ID` | Database access for meetings, tasks, newsletters, subscribers |
 | Loops | `LOOPS_API_KEY`, `LOOPS_TRANSACTIONAL_ID` | Transactional email sending |
 | Slack | `SLACK_WEBHOOK_URL` | Draft notifications (optional) |
 | Slack Bot | `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET` | `/newsletter` slash commands (optional) |
