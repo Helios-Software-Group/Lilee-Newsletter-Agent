@@ -100,9 +100,23 @@ NOTION_MEETING_NOTES_DB_ID=<meeting-notes-db-id>
 
 You need 3 core databases. Create them in Notion with these properties:
 
-> **Tip:** You can use Notion AI to set this up. Open a new page, type `/ai`, and ask it to create each database with the properties listed below. You can also ask Notion AI questions about any of these steps if you get stuck.
+> **Tip:** Use Notion AI to create each database instantly. Open a blank page, type `/ai`, and paste the prompt from each section below. Then verify the result against the property table.
 
 ### 4a. Newsletter DB
+
+**Notion AI prompt** — copy-paste this into `/ai`:
+```
+Create a database called "Newsletter" with these properties:
+- "Issue" (title)
+- "Issue date" (date)
+- "Status" (status) with options: Draft, Test Sent, Ready, Sent, Done
+- "Audience" (multi_select) with options: Customers, Internal
+- "Highlights" (rich_text)
+- "Primary customer" (rich_text)
+- "Collateral" (rich_text)
+```
+
+**Verify these properties exist:**
 
 | Property | Type | Configuration |
 |----------|------|---------------|
@@ -117,6 +131,20 @@ You need 3 core databases. Create them in Notion with these properties:
 > **Important:** Make sure "Test Sent" is a Status option — this triggers test emails to your address only (set up in Step 10).
 
 ### 4b. Meetings DB
+
+**Notion AI prompt** — copy-paste this into `/ai`:
+```
+Create a database called "Meetings" with these properties:
+- "Name" (title)
+- "Date" (date)
+- "Bucket" (select) with options: Customer, Pipeline, Internal
+- "Summary" (rich_text)
+- "Company" (rich_text)
+- "Topics" (multi_select) with options: Product Demo, Pricing, Technical, Strategy, Hiring, Partnership, Support, Onboarding, Feedback
+- "Action Items" (rich_text)
+```
+
+**Verify these properties exist:**
 
 | Property | Type | Configuration |
 |----------|------|---------------|
@@ -138,6 +166,16 @@ You need 3 core databases. Create them in Notion with these properties:
 > **Fallback:** The `npm run categorize` command uses Claude to backfill any meetings that Notion's autofill missed. It's useful for catching gaps, but not required if your Notion autofill prompts are working well.
 
 ### 4c. Tasks DB
+
+**Notion AI prompt** — copy-paste this into `/ai`:
+```
+Create a database called "Tasks" with these properties:
+- "Name" (title)
+- "Status" (status) with options: Not Started, In Progress, Done
+- "Sprint" (relation) — leave empty for now, link to Sprints DB later
+```
+
+**Verify these properties exist:**
 
 | Property | Type | Configuration |
 |----------|------|---------------|
